@@ -13,7 +13,10 @@ const AVATAR_ID_4 = '2734589a-ef8f-11ef-9966-42010a7be016'
 const CONVAI_API_URL = 'https://api.convai.com/character/get'
 
 function AvatarModel({ modelUrl, onLoad, ...props }) {
+  console.log(`Renderowanie modelu avatara z URL: ${modelUrl}`)
+  
   const { scene } = useGLTF(modelUrl)
+  console.log('Załadowano model GLTF:', scene)
   
   // Dodajemy kontrolki Leva
   const controls = useControls({
@@ -109,6 +112,22 @@ function AvatarModel({ modelUrl, onLoad, ...props }) {
 
   const groupRef = useRef()
 
+  const [shouldLoad, setShouldLoad] = useState(false)
+
+  useEffect(() => {
+    console.log('Rozpoczęcie opóźnienia ładowania avatara')
+    const timer = setTimeout(() => {
+      console.log('Zakończono opóźnienie ładowania avatara')
+      setShouldLoad(true)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  if (!shouldLoad) {
+    console.log('Avatar: pomijanie renderowania (shouldLoad=false)')
+    return null
+  }
+
   return (
     <group ref={groupRef}>
       <primitive 
@@ -122,34 +141,46 @@ function AvatarModel({ modelUrl, onLoad, ...props }) {
 export function ConvaiAvatar({ onLoad, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [error, setError] = useState(null)
+  const [shouldLoad, setShouldLoad] = useState(false)
 
   useEffect(() => {
-    async function fetchCharacterData() {
-      try {
-        const response = await fetch(CONVAI_API_URL, {
-          method: 'POST',
-          headers: {
-            'CONVAI-API-KEY': API_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ charID: AVATAR_ID })
-        })
-
-        if (!response.ok) throw new Error('Failed to fetch character')
-        
-        const data = await response.json()
-        if (data?.model_details?.modelLink) {
-          setModelUrl(data.model_details.modelLink)
-        } else {
-          throw new Error('Invalid model URL')
-        }
-      } catch (error) {
-        console.error('Error:', error)
-        setError(error)
-      }
-    }
-    fetchCharacterData()
+    const timer = setTimeout(() => setShouldLoad(true), 2000)
+    return () => clearTimeout(timer)
   }, [])
+
+  useEffect(() => {
+    if (!modelUrl) {
+      console.log(`Rozpoczęcie ładowania modelu dla avatara ${AVATAR_ID}`)
+      async function fetchCharacterData() {
+        try {
+          const response = await fetch(CONVAI_API_URL, {
+            method: 'POST',
+            headers: {
+              'CONVAI-API-KEY': API_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ charID: AVATAR_ID })
+          })
+
+          if (!response.ok) throw new Error('Failed to fetch character')
+          
+          const data = await response.json()
+          console.log('Otrzymano dane z API:', data)
+          
+          if (data?.model_details?.modelLink) {
+            console.log(`Ustawiam URL modelu: ${data.model_details.modelLink}`)
+            setModelUrl(data.model_details.modelLink)
+          } else {
+            throw new Error('Invalid model URL')
+          }
+        } catch (error) {
+          console.error('Błąd podczas pobierania avatara:', error)
+          setError(error)
+        }
+      }
+      fetchCharacterData()
+    }
+  }, [modelUrl])
 
   useEffect(() => {
     if (modelUrl && !error) {
@@ -160,6 +191,8 @@ export function ConvaiAvatar({ onLoad, ...props }) {
 
   if (error) return null
   if (!modelUrl) return null
+
+  if (!shouldLoad) return null
 
   return (
     <Suspense>
@@ -177,6 +210,7 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
   const [isTalking, setIsTalking] = useState(false)
   const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
+  const [shouldLoad, setShouldLoad] = useState(false)
 
   useEffect(() => {
     const handleTalkingStart = () => setIsTalking(true)
@@ -189,6 +223,11 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
       window.removeEventListener('avatar-talking-start', handleTalkingStart)
       window.removeEventListener('avatar-talking-end', handleTalkingEnd)
     }
+  }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShouldLoad(true), 2000)
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -229,6 +268,8 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
   if (error) return null
   if (!modelUrl) return null
 
+  if (!shouldLoad) return null
+
   return (
     <Suspense>
       <AvatarModel 
@@ -247,6 +288,7 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
   const [isTalking, setIsTalking] = useState(false)
   const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
+  const [shouldLoad, setShouldLoad] = useState(false)
 
   useEffect(() => {
     const handleTalkingStart = () => setIsTalking(true)
@@ -259,6 +301,11 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
       window.removeEventListener('avatar-talking-start', handleTalkingStart)
       window.removeEventListener('avatar-talking-end', handleTalkingEnd)
     }
+  }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShouldLoad(true), 2000)
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -299,6 +346,8 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
   if (error) return null
   if (!modelUrl) return null
 
+  if (!shouldLoad) return null
+
   return (
     <Suspense>
       <AvatarModel 
@@ -317,6 +366,7 @@ export function ConvaiAvatar4({ onLoad, ...props }) {
   const [isTalking, setIsTalking] = useState(false)
   const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
+  const [shouldLoad, setShouldLoad] = useState(false)
 
   useEffect(() => {
     const handleTalkingStart = () => setIsTalking(true)
@@ -329,6 +379,11 @@ export function ConvaiAvatar4({ onLoad, ...props }) {
       window.removeEventListener('avatar-talking-start', handleTalkingStart)
       window.removeEventListener('avatar-talking-end', handleTalkingEnd)
     }
+  }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShouldLoad(true), 2000)
+    return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
@@ -368,6 +423,8 @@ export function ConvaiAvatar4({ onLoad, ...props }) {
 
   if (error) return null
   if (!modelUrl) return null
+
+  if (!shouldLoad) return null
 
   return (
     <Suspense>

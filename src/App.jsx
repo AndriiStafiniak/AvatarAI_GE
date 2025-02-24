@@ -79,7 +79,7 @@ const AvatarWithPhysics = ({ children, onLoad, position, rotation }) => {
 }
 
 // Optymalizacja głównego komponentu sceny
-const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selectedAvatar }) => {
+const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selectedAvatar, isLoading }) => {
   // Stały układ losowy wygenerowany raz na zawsze
   const initialPositions = {
     insideLeft: [-18.2, 2, 8.7],
@@ -160,28 +160,13 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selec
           <Suspense fallback={null}>
             <group position={[0, -1, 0]}>
               {/* Dynamic avatar selection */}
-              {selectedAvatar === 1 && (
-                <AvatarWithPhysics position={[0, 0, 0]} rotation={[0, 0, 0]}>
-                  <ConvaiAvatar castShadow receiveShadow onLoad={onAvatarLoaded} />
-                </AvatarWithPhysics>
-              )}
-              
-              {selectedAvatar === 2 && (
-                <AvatarWithPhysics position={[0, 0, 0]} rotation={[0, 0, 0]}>
-                  <ConvaiAvatar2 castShadow receiveShadow onLoad={onAvatarLoaded} />
-                </AvatarWithPhysics>
-              )}
-
-              {selectedAvatar === 3 && (
-                <AvatarWithPhysics position={[0, 0, 0]} rotation={[0, 0, 0]}>
-                  <ConvaiAvatar3 castShadow receiveShadow onLoad={onAvatarLoaded} />
-                </AvatarWithPhysics>
-              )}
-
-              {selectedAvatar === 4 && (
-                <AvatarWithPhysics position={[0, 0, 0]} rotation={[0, 0, 0]}>
-                  <ConvaiAvatar4 castShadow receiveShadow onLoad={onAvatarLoaded} />
-                </AvatarWithPhysics>
+              {!isLoading && (
+                <>
+                  {selectedAvatar === 1 && <ConvaiAvatar onLoad={onAvatarLoaded} />}
+                  {selectedAvatar === 2 && <ConvaiAvatar2 onLoad={onAvatarLoaded} />}
+                  {selectedAvatar === 3 && <ConvaiAvatar3 onLoad={onAvatarLoaded} />}
+                  {selectedAvatar === 4 && <ConvaiAvatar4 onLoad={onAvatarLoaded} />}
+                </>
               )}
               <ReceptionDesk
                 currentAction={currentAction}
@@ -235,22 +220,32 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selec
 }, (prevProps, nextProps) => {
   return prevProps.isAvatarLoaded === nextProps.isAvatarLoaded &&
          prevProps.currentAction === nextProps.currentAction &&
-         prevProps.selectedAvatar === nextProps.selectedAvatar
+         prevProps.selectedAvatar === nextProps.selectedAvatar &&
+         prevProps.isLoading === nextProps.isLoading
 })
 
 const App = () => {
   const [currentAction, setCurrentAction] = useState('')
   const [isAvatarLoaded, setIsAvatarLoaded] = useState(false)
   const [selectedAvatar, setSelectedAvatar] = useState(1)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleAvatarLoaded = useCallback(() => {
-    setIsAvatarLoaded(true)
+  const handleAvatarChange = useCallback((avatarNumber) => {
+    console.log(`Inicjowanie zmiany avatara na: ${avatarNumber}`)
+    setIsLoading(true)
+    setSelectedAvatar(avatarNumber)
+    
+    setTimeout(() => {
+      console.log(`Zakończono ładowanie avatara: ${avatarNumber}`)
+      setIsLoading(false)
+      setIsAvatarLoaded(true)
+    }, 2000)
   }, [])
 
   const avatarButtons = [1, 2, 3, 4].map((num) => (
     <button
       key={num}
-      onClick={() => setSelectedAvatar(num)}
+      onClick={() => handleAvatarChange(num)}
       style={{
         padding: '12px 24px',
         margin: '0 8px',
@@ -261,11 +256,11 @@ const App = () => {
         cursor: 'pointer',
         fontSize: '16px',
         transition: 'all 0.3s ease',
-        opacity: isAvatarLoaded ? 1 : 0.5,
-        pointerEvents: isAvatarLoaded ? 'auto' : 'none'
+        opacity: isLoading ? (selectedAvatar === num ? 1 : 0.3) : 1,
+        pointerEvents: isLoading ? 'none' : 'auto'
       }}
     >
-      Avatar {num}
+      {isLoading && selectedAvatar === num ? 'Ładowanie...' : `Avatar ${num}`}
     </button>
   ))
 
@@ -313,9 +308,10 @@ const App = () => {
             <Scene3DErrorBoundary>
               <Scene 
                 isAvatarLoaded={isAvatarLoaded}
-                onAvatarLoaded={handleAvatarLoaded}
+                onAvatarLoaded={() => setIsAvatarLoaded(true)}
                 currentAction={currentAction}
                 selectedAvatar={selectedAvatar}
+                isLoading={isLoading}
               />
             </Scene3DErrorBoundary>
             {isAvatarLoaded && <ChatInterface characterId={AVATAR_ID} />}
