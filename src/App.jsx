@@ -20,11 +20,39 @@ import { Rollup } from './components/Rollup'
 import { KeyboardControls } from '@react-three/drei'
 import { FPVCamera } from './components/FPVCamera'
 import { Physics } from '@react-three/cannon'
-import  Ceiling from './components/Ceiling'
+import { Ceiling } from './components/Ceiling'
 import { useCylinder } from '@react-three/cannon'
 
 
 const AVATAR_ID = 'fe2da934-6aa4-11ef-8fba-42010a7be011'
+
+// Dodaj nową stałą z paletami kolorów
+const COLOR_PALETTES = {
+  1: {
+    walls: '#a0a0a0',
+    floor: '#4a4a4a',
+    ceiling: '#606060',
+    frontWall: '#909090'
+  },
+  2: {
+    walls: '#7c9eb2',
+    floor: '#3a5f6f',
+    ceiling: '#5a7f8f',
+    frontWall: '#6a8da0'
+  },
+  3: {
+    walls: '#b28c7c',
+    floor: '#6f3a3a',
+    ceiling: '#8f5a5a',
+    frontWall: '#a06a6a'
+  },
+  4: {
+    walls: '#7cb27c',
+    floor: '#3a6f3a',
+    ceiling: '#5a8f5a',
+    frontWall: '#6aa06a'
+  }
+};
 
 // Optymalizacja ErrorBoundary z lepszą obsługą błędów
 class Scene3DErrorBoundary extends Component {
@@ -80,6 +108,8 @@ const AvatarWithPhysics = ({ children, onLoad, position, rotation }) => {
 
 // Optymalizacja głównego komponentu sceny
 const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selectedAvatar, isLoading }) => {
+  const currentColors = COLOR_PALETTES[selectedAvatar];
+  
   // Stały układ losowy wygenerowany raz na zawsze
   const initialPositions = {
     insideLeft: [-18.2, 2, 8.7],
@@ -174,8 +204,8 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selec
                 rotation={[0, Math.PI * 0, 0]}
                 scale={1.1}
               />
-              <Floor />
-              <Ceiling />
+              <Floor color={currentColors.floor} />
+              <Ceiling color={currentColors.ceiling} />
               <Tv />
               <Zegar />
               <CoffeeTable />
@@ -185,31 +215,31 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selec
                 name="Left Wall"
                 initialPosition={[-12.5, 2, 0]}  // Lewa krawędź podłogi (X = -12.5)
                 initialSize={[0.2, 4, 25]}       // Cienka ściana (0.2m), wysokość 4m, długość 25m
-                initialColor="#a0a0a0"
+                initialColor={currentColors.walls}
               />
               <Wall
                 name="Right Wall"
                 initialPosition={[12.5, 2, 0]}   // Prawa krawędź podłogi (X = +12.5)
                 initialSize={[0.2, 4, 25]}       // Cienka ściana (0.2m), wysokość 4m, długość 25m
-                initialColor="#a0a0a0"
+                initialColor={currentColors.walls}
               />
               <Wall
                 name="Back Wall"
                 initialPosition={[0, 2, -12.5]}  // Tylna krawędź podłogi (Z = -12.5)
                 initialSize={[25, 4, 0.2]}       // Szerokość 25m, wysokość 4m, cienka ściana (0.2m)
-                initialColor="#a0a0a0"
+                initialColor={currentColors.walls}
               />
               <Wall
                 name="Front Wall"
                 initialPosition={[0, 2, 12.5]}    // Przednia krawędź podłogi (Z = +12.5)
                 initialSize={[25, 4, 0.2]}       // Szerokość 25m, wysokość 4m, cienka ściana (0.2m)
-                initialColor="#909090"
+                initialColor={currentColors.frontWall}
               />
               <Wall
                 name="Inside Back Wall"
                 initialPosition={[3, 2, -2.45]}      // 8m od tyłu w głąb pomieszczenia
                 initialSize={[18, 4, 0.2]}       // Szerokość 18m (72% szerokości podłogi)
-                initialColor="#404040"
+                initialColor={currentColors.walls}
               />
             </group>
           </Suspense>
