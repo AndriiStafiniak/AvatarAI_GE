@@ -79,7 +79,7 @@ const AvatarWithPhysics = ({ children, onLoad, position, rotation }) => {
 }
 
 // Optymalizacja głównego komponentu sceny
-const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction }) => {
+const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selectedAvatar }) => {
   // Stały układ losowy wygenerowany raz na zawsze
   const initialPositions = {
     insideLeft: [-18.2, 2, 8.7],
@@ -159,34 +159,30 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction }) => 
           />
           <Suspense fallback={null}>
             <group position={[0, -1, 0]}>
-              <AvatarWithPhysics 
-                position={[0, 0, 0]}
-                rotation={[0, -Math.PI * 0, 0]}
-                onLoad={onAvatarLoaded}
-              >
-                <ConvaiAvatar castShadow receiveShadow />
-              </AvatarWithPhysics>
+              {/* Dynamic avatar selection */}
+              {selectedAvatar === 1 && (
+                <AvatarWithPhysics position={[0, 0, 0]} rotation={[0, 0, 0]}>
+                  <ConvaiAvatar castShadow receiveShadow onLoad={onAvatarLoaded} />
+                </AvatarWithPhysics>
+              )}
+              
+              {selectedAvatar === 2 && (
+                <AvatarWithPhysics position={[0, 0, 0]} rotation={[0, 0, 0]}>
+                  <ConvaiAvatar2 castShadow receiveShadow onLoad={onAvatarLoaded} />
+                </AvatarWithPhysics>
+              )}
 
-              <AvatarWithPhysics 
-                position={[-14, 0, 9]}
-                rotation={[0, Math.PI * 0.5, 0]}
-              >
-                <ConvaiAvatar2 castShadow receiveShadow />
-              </AvatarWithPhysics>
+              {selectedAvatar === 3 && (
+                <AvatarWithPhysics position={[0, 0, 0]} rotation={[0, 0, 0]}>
+                  <ConvaiAvatar3 castShadow receiveShadow onLoad={onAvatarLoaded} />
+                </AvatarWithPhysics>
+              )}
 
-              <AvatarWithPhysics 
-                position={[-8, 0, 21]}
-                rotation={[0, -Math.PI, 0]}
-              >
-                <ConvaiAvatar3 castShadow receiveShadow />
-              </AvatarWithPhysics>
-
-              <AvatarWithPhysics 
-                position={[8, 0, 17]}
-                rotation={[0, Math.PI, 0]}
-              >
-                <ConvaiAvatar4 castShadow receiveShadow />
-              </AvatarWithPhysics>
+              {selectedAvatar === 4 && (
+                <AvatarWithPhysics position={[0, 0, 0]} rotation={[0, 0, 0]}>
+                  <ConvaiAvatar4 castShadow receiveShadow onLoad={onAvatarLoaded} />
+                </AvatarWithPhysics>
+              )}
               <ReceptionDesk
                 currentAction={currentAction}
                 position={[0, 0, 0]}
@@ -238,16 +234,40 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction }) => 
   )
 }, (prevProps, nextProps) => {
   return prevProps.isAvatarLoaded === nextProps.isAvatarLoaded &&
-         prevProps.currentAction === nextProps.currentAction
+         prevProps.currentAction === nextProps.currentAction &&
+         prevProps.selectedAvatar === nextProps.selectedAvatar
 })
 
 const App = () => {
   const [currentAction, setCurrentAction] = useState('')
   const [isAvatarLoaded, setIsAvatarLoaded] = useState(false)
+  const [selectedAvatar, setSelectedAvatar] = useState(1)
 
   const handleAvatarLoaded = useCallback(() => {
     setIsAvatarLoaded(true)
   }, [])
+
+  const avatarButtons = [1, 2, 3, 4].map((num) => (
+    <button
+      key={num}
+      onClick={() => setSelectedAvatar(num)}
+      style={{
+        padding: '12px 24px',
+        margin: '0 8px',
+        backgroundColor: selectedAvatar === num ? '#2196F3' : '#666',
+        color: 'white',
+        border: 'none',
+        borderRadius: '4px',
+        cursor: 'pointer',
+        fontSize: '16px',
+        transition: 'all 0.3s ease',
+        opacity: isAvatarLoaded ? 1 : 0.5,
+        pointerEvents: isAvatarLoaded ? 'auto' : 'none'
+      }}
+    >
+      Avatar {num}
+    </button>
+  ))
 
   return (
     <div className="app-container" style={{ 
@@ -268,6 +288,23 @@ const App = () => {
           ]}
         >
           <div className="scene-container">
+            {/* Nowy kontener z przyciskami */}
+            <div style={{
+              position: 'absolute',
+              bottom: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1000,
+              display: 'flex',
+              gap: '10px',
+              padding: '10px',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              borderRadius: '8px',
+              backdropFilter: 'blur(4px)'
+            }}>
+              {avatarButtons}
+            </div>
+
             {!isAvatarLoaded && (
               <div className="loading-overlay">
                 <LoadingSpinner progress={70} />
@@ -278,6 +315,7 @@ const App = () => {
                 isAvatarLoaded={isAvatarLoaded}
                 onAvatarLoaded={handleAvatarLoaded}
                 currentAction={currentAction}
+                selectedAvatar={selectedAvatar}
               />
             </Scene3DErrorBoundary>
             {isAvatarLoaded && <ChatInterface characterId={AVATAR_ID} />}
