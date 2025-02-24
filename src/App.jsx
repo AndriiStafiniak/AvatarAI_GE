@@ -108,12 +108,12 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction }) => 
         camera.lookAt(0, 1, 0)  // Celujemy na wysokości 1m (środek awatara)
       }}
     >
-      {/* <OrbitControls /> */}
+      <OrbitControls />
       <Physics gravity={[0, -9.81, 0]}>
-        <FPVCamera 
+        {/* <FPVCamera 
           speed={5} 
           sensitivity={0.0020}
-        />
+        /> */}
         <Environment 
           preset="night"
           background
@@ -123,7 +123,7 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction }) => 
           environmentIntensity={0.8}
         />
         
-        {/* <PresentationControls
+        <PresentationControls
           global
           position={[0, -0.5, 0]}
           rotation={[0, 0, 0]}
@@ -133,7 +133,7 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction }) => 
           snap={{ mass: 3, tension: 200 }}
           speed={1.5}
           zoom={1}
-        > */}
+        >
           <ambientLight intensity={1.2} color="#ffffff" />
           <directionalLight
             position={[15, 15, 15]}
@@ -193,24 +193,6 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction }) => 
                 rotation={[0, Math.PI * 0, 0]}
                 scale={1.1}
               />
-              <ReceptionDesk
-                currentAction={currentAction}
-                position={[-14, 0, 9]}
-                rotation={[0, Math.PI * 0.5, 0]}
-                scale={1.1}
-              />
-              <ReceptionDesk
-                currentAction={currentAction}
-                position={[-8, 0, 21]}
-                rotation={[0, -Math.PI, 0]}
-                scale={1.1}
-              />
-              <ReceptionDesk
-                currentAction={currentAction}
-                position={[8, 0, 17]}
-                rotation={[0, Math.PI, 0]}
-                scale={1.1}
-              />
               <Floor />
               <Ceiling />
               <Tv />
@@ -218,102 +200,39 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction }) => 
               <CoffeeTable />
               <Vase/>
               <Chair />
-              {/* <Rollup /> */}
               <Wall
                 name="Left Wall"
-                initialPosition={[-22.5, 2, 2]}
-                initialSize={[1, 4, 50]}
+                initialPosition={[-12.5, 2, 0]}  // Lewa krawędź podłogi (X = -12.5)
+                initialSize={[0.2, 4, 25]}       // Cienka ściana (0.2m), wysokość 4m, długość 25m
                 initialColor="#a0a0a0"
               />
               <Wall
                 name="Right Wall"
-                initialPosition={[27.5, 2, 2]}
-                initialSize={[1, 4, 50]}
+                initialPosition={[12.5, 2, 0]}   // Prawa krawędź podłogi (X = +12.5)
+                initialSize={[0.2, 4, 25]}       // Cienka ściana (0.2m), wysokość 4m, długość 25m
                 initialColor="#a0a0a0"
               />
               <Wall
                 name="Back Wall"
-                initialPosition={[2.5, 2, -23]}
-                initialSize={[50, 4, 1]}
+                initialPosition={[0, 2, -12.5]}  // Tylna krawędź podłogi (Z = -12.5)
+                initialSize={[25, 4, 0.2]}       // Szerokość 25m, wysokość 4m, cienka ściana (0.2m)
                 initialColor="#a0a0a0"
               />
               <Wall
                 name="Front Wall"
-                initialPosition={[2.5, 2, 27]}
-                initialSize={[50, 4, 1]}
+                initialPosition={[0, 2, 12.5]}    // Przednia krawędź podłogi (Z = +12.5)
+                initialSize={[25, 4, 0.2]}       // Szerokość 25m, wysokość 4m, cienka ściana (0.2m)
                 initialColor="#909090"
               />
               <Wall
-                name="Inside Left Wall"
-                initialPosition={initialPositions.insideLeft}
-                initialSize={[0.5, 4, 20]}
-                initialColor="#ffffff"
-              />
-              <Wall
-                name="Inside Right Wall"
-                initialPosition={initialPositions.insideRight}
-                initialSize={[0.5, 4, 20]}
-                initialColor="#3a4b5c"
-              />
-              <Wall
-                name="Inside Front Wall Left"
-                initialPosition={initialPositions.frontLeft}
-                initialSize={[5, 4, 0.5]}
-                initialColor="#ffffff"
-              />
-              <Wall
-                name="Inside Front Wall Right"
-                initialPosition={initialPositions.frontRight}
-                initialSize={[5, 4, 0.5]}
-                initialColor="#2c3e50"
-              />
-              <Wall
-                name="Partition Wall 1"
-                initialPosition={initialPositions.partition1}
-                initialSize={[0.5, 4, 10]}
-                initialColor="#465362"
-              />
-              <Wall
-                name="Partition Wall 2"
-                initialPosition={initialPositions.partition2}
-                initialSize={[0.5, 4, 10]}
-                initialColor="#3d5467"
-              />
-              <Wall
-                name="Partition Wall 3 Left"
-                initialPosition={initialPositions.partition3Left}
-                initialSize={[4, 4, 0.5]}
-                initialColor="#354052"
-              />
-              <Wall
-                name="Partition Wall 3 Right"
-                initialPosition={initialPositions.partition3Right}
-                initialSize={[4, 4, 0.5]}
-                initialColor="#2d3646"
-              />
-              <Wall
-                name="Corner Partition 1"
-                initialPosition={initialPositions.corner1}
-                initialSize={[0.5, 4, 8]}
-                initialColor="#3a4556"
-                rotation={[0, Math.PI/4, 0]}
-              />
-              <Wall
-                name="Corner Partition 2"
-                initialPosition={initialPositions.corner2}
-                initialSize={[0.5, 4, 8]}
-                initialColor="#333d4d"
-                rotation={[0, -Math.PI, 0]}
-              />
-              <Wall
                 name="Inside Back Wall"
-                initialPosition={[5, 2, -2.6]}
-                initialSize={[20, 4, 0.5]}
+                initialPosition={[3, 2, -2.45]}      // 8m od tyłu w głąb pomieszczenia
+                initialSize={[18, 4, 0.2]}       // Szerokość 18m (72% szerokości podłogi)
                 initialColor="#404040"
               />
             </group>
           </Suspense>
-        {/* </PresentationControls> */}
+        </PresentationControls>
       </Physics>
     </Canvas>
   )

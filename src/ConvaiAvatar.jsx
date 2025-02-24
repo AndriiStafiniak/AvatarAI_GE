@@ -12,7 +12,7 @@ const AVATAR_ID_3 = '9ff38f44-437d-11ef-9187-42010a7be011'
 const AVATAR_ID_4 = '2734589a-ef8f-11ef-9966-42010a7be016'
 const CONVAI_API_URL = 'https://api.convai.com/character/get'
 
-function AvatarModel({ modelUrl, isPlaying, currentAction, onLoad, ...props }) {
+function AvatarModel({ modelUrl, onLoad, ...props }) {
   const { scene } = useGLTF(modelUrl)
   
   // Dodajemy kontrolki Leva
@@ -108,56 +108,6 @@ function AvatarModel({ modelUrl, isPlaying, currentAction, onLoad, ...props }) {
   }, [scene, controls])
 
   const groupRef = useRef()
-  const mixerRef = useRef()
-  const [talkingAnimation, setTalkingAnimation] = useState(null)
-
-  useEffect(() => {
-    const fbxLoader = new FBXLoader()
-    fbxLoader.load(
-      '/animation/avatar.fbx',
-      (fbx) => {
-        if (fbx.animations && fbx.animations.length > 0) {
-          setTalkingAnimation(fbx.animations[0])
-        }
-      },
-      undefined,
-      (error) => console.error('Error loading FBX:', error)
-    )
-  }, [])
-
-  useEffect(() => {
-    if (clone && talkingAnimation) {
-      mixerRef.current = new THREE.AnimationMixer(clone)
-      const action = mixerRef.current.clipAction(talkingAnimation)
-      
-      if (isPlaying) {
-        action.reset().fadeIn(0.5).play()
-      } else {
-        action.fadeOut(0.5)
-      }
-
-      return () => {
-        mixerRef.current.stopAllAction()
-      }
-    }
-  }, [clone, talkingAnimation, isPlaying])
-
-  useEffect(() => {
-    let frameId
-    const animate = () => {
-      frameId = requestAnimationFrame(animate)
-      if (mixerRef.current) {
-        mixerRef.current.update(0.016)
-      }
-    }
-    
-    animate()
-    return () => {
-      if (frameId) {
-        cancelAnimationFrame(frameId)
-      }
-    }
-  }, [])
 
   return (
     <group ref={groupRef}>
@@ -171,22 +121,7 @@ function AvatarModel({ modelUrl, isPlaying, currentAction, onLoad, ...props }) {
 
 export function ConvaiAvatar({ onLoad, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
-  const [isTalking, setIsTalking] = useState(false)
-  const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
-
-  useEffect(() => {
-    const handleTalkingStart = () => setIsTalking(true)
-    const handleTalkingEnd = () => setIsTalking(false)
-
-    window.addEventListener('avatar-talking-start', handleTalkingStart)
-    window.addEventListener('avatar-talking-end', handleTalkingEnd)
-
-    return () => {
-      window.removeEventListener('avatar-talking-start', handleTalkingStart)
-      window.removeEventListener('avatar-talking-end', handleTalkingEnd)
-    }
-  }, [])
 
   useEffect(() => {
     async function fetchCharacterData() {
@@ -230,8 +165,6 @@ export function ConvaiAvatar({ onLoad, ...props }) {
     <Suspense>
       <AvatarModel 
         modelUrl={modelUrl}
-        isPlaying={isTalking}
-        currentAction={currentAction}
         onLoad={onLoad}
         {...props} 
       />
@@ -242,7 +175,21 @@ export function ConvaiAvatar({ onLoad, ...props }) {
 export function ConvaiAvatar2({ onLoad, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [isTalking, setIsTalking] = useState(false)
+  const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const handleTalkingStart = () => setIsTalking(true)
+    const handleTalkingEnd = () => setIsTalking(false)
+
+    window.addEventListener('avatar-talking-start', handleTalkingStart)
+    window.addEventListener('avatar-talking-end', handleTalkingEnd)
+
+    return () => {
+      window.removeEventListener('avatar-talking-start', handleTalkingStart)
+      window.removeEventListener('avatar-talking-end', handleTalkingEnd)
+    }
+  }, [])
 
   useEffect(() => {
     async function fetchCharacterData() {
@@ -272,6 +219,13 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
     fetchCharacterData()
   }, [])
 
+  useEffect(() => {
+    if (modelUrl && !error) {
+      useGLTF.preload('/reception_desk.glb')
+      onLoad?.()
+    }
+  }, [modelUrl, error, onLoad])
+
   if (error) return null
   if (!modelUrl) return null
 
@@ -280,6 +234,7 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
       <AvatarModel 
         modelUrl={modelUrl}
         isPlaying={isTalking}
+        currentAction={currentAction}
         onLoad={onLoad}
         {...props} 
       />
@@ -290,7 +245,21 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
 export function ConvaiAvatar3({ onLoad, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [isTalking, setIsTalking] = useState(false)
+  const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const handleTalkingStart = () => setIsTalking(true)
+    const handleTalkingEnd = () => setIsTalking(false)
+
+    window.addEventListener('avatar-talking-start', handleTalkingStart)
+    window.addEventListener('avatar-talking-end', handleTalkingEnd)
+
+    return () => {
+      window.removeEventListener('avatar-talking-start', handleTalkingStart)
+      window.removeEventListener('avatar-talking-end', handleTalkingEnd)
+    }
+  }, [])
 
   useEffect(() => {
     async function fetchCharacterData() {
@@ -320,6 +289,13 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
     fetchCharacterData()
   }, [])
 
+  useEffect(() => {
+    if (modelUrl && !error) {
+      useGLTF.preload('/reception_desk.glb')
+      onLoad?.()
+    }
+  }, [modelUrl, error, onLoad])
+
   if (error) return null
   if (!modelUrl) return null
 
@@ -328,6 +304,7 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
       <AvatarModel 
         modelUrl={modelUrl}
         isPlaying={isTalking}
+        currentAction={currentAction}
         onLoad={onLoad}
         {...props} 
       />
@@ -338,7 +315,21 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
 export function ConvaiAvatar4({ onLoad, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [isTalking, setIsTalking] = useState(false)
+  const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const handleTalkingStart = () => setIsTalking(true)
+    const handleTalkingEnd = () => setIsTalking(false)
+
+    window.addEventListener('avatar-talking-start', handleTalkingStart)
+    window.addEventListener('avatar-talking-end', handleTalkingEnd)
+
+    return () => {
+      window.removeEventListener('avatar-talking-start', handleTalkingStart)
+      window.removeEventListener('avatar-talking-end', handleTalkingEnd)
+    }
+  }, [])
 
   useEffect(() => {
     async function fetchCharacterData() {
@@ -368,6 +359,13 @@ export function ConvaiAvatar4({ onLoad, ...props }) {
     fetchCharacterData()
   }, [])
 
+  useEffect(() => {
+    if (modelUrl && !error) {
+      useGLTF.preload('/reception_desk.glb')
+      onLoad?.()
+    }
+  }, [modelUrl, error, onLoad])
+
   if (error) return null
   if (!modelUrl) return null
 
@@ -376,6 +374,7 @@ export function ConvaiAvatar4({ onLoad, ...props }) {
       <AvatarModel 
         modelUrl={modelUrl}
         isPlaying={isTalking}
+        currentAction={currentAction}
         onLoad={onLoad}
         {...props} 
       />
