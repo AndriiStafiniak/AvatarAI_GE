@@ -123,6 +123,18 @@ function AvatarModel({ modelUrl, onLoad, ...props }) {
     return () => clearTimeout(timer)
   }, [])
 
+  useEffect(() => {
+    console.log('[Avatar] Mounting component for:', AVATAR_ID)
+    return () => {
+      console.log('[Avatar] Unmounting component for:', AVATAR_ID)
+      // Dodatkowy cleanup jeśli potrzebny
+    }
+  }, [])
+
+  useEffect(() => {
+    console.log('[Avatar] Model URL changed:', modelUrl)
+  }, [modelUrl])
+
   if (!shouldLoad) {
     console.log('Avatar: pomijanie renderowania (shouldLoad=false)')
     return null

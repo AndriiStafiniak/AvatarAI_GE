@@ -24,7 +24,12 @@ import { Ceiling } from './components/Ceiling'
 import { useCylinder } from '@react-three/cannon'
 
 
-const AVATAR_ID = 'fe2da934-6aa4-11ef-8fba-42010a7be011'
+const AVATAR_IDS = {
+  1: 'fe2da934-6aa4-11ef-8fba-42010a7be011',
+  2: '881e4aac-50d5-11ef-9461-42010a7be011',
+  3: '9ff38f44-437d-11ef-9187-42010a7be011',
+  4: '2734589a-ef8f-11ef-9966-42010a7be016'
+};
 
 // Dodaj nową stałą z paletami kolorów
 const COLOR_PALETTES = {
@@ -261,16 +266,21 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleAvatarChange = useCallback((avatarNumber) => {
-    console.log(`Inicjowanie zmiany avatara na: ${avatarNumber}`)
+    console.groupCollapsed('[App] Avatar change initiated')
+    console.log('Previous avatar:', selectedAvatar)
+    console.log('New avatar:', avatarNumber)
+    console.log('Current loading state:', isLoading)
+    
     setIsLoading(true)
     setSelectedAvatar(avatarNumber)
     
     setTimeout(() => {
-      console.log(`Zakończono ładowanie avatara: ${avatarNumber}`)
+      console.log('[App] Avatar load timeout completed')
       setIsLoading(false)
       setIsAvatarLoaded(true)
+      console.groupEnd()
     }, 2000)
-  }, [])
+  }, [selectedAvatar, isLoading])
 
   const avatarButtons = [1, 2, 3, 4].map((num) => (
     <button
@@ -344,7 +354,7 @@ const App = () => {
                 isLoading={isLoading}
               />
             </Scene3DErrorBoundary>
-            {isAvatarLoaded && <ChatInterface characterId={AVATAR_ID} />}
+            {isAvatarLoaded && <ChatInterface characterId={AVATAR_IDS[selectedAvatar]} />}
           </div>
         </KeyboardControls>
       </ConvaiContext.Provider>
