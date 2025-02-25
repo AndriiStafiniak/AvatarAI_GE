@@ -411,11 +411,14 @@ function SceneButtons() {
   
   return (
     <div className="scene-buttons">
-      <button onClick={() => setCurrentScene("TRANSFORMACJA ENERGETYCZNA")}>
+      <button onClick={() => setCurrentScene(LABELS[1])}>
         Transformacja Energetyczna
       </button>
-      <button onClick={() => setCurrentScene("HUB ENERGETYCZNY")}>
+      <button onClick={() => setCurrentScene(LABELS[2])}>
         Hub Energetyczny
+      </button>
+      <button onClick={() => setCurrentScene(LABELS[3])}>
+        POPRAWA EFEKTYWNOŚCI OZE
       </button>
       <button onClick={() => {
         const randomText = "TEST " + Math.floor(Math.random() * 1000);
