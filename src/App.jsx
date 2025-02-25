@@ -1,4 +1,4 @@
-import React, { Suspense, useState, Component, useCallback } from 'react'
+import React, { Suspense, useState, Component, useCallback, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, PresentationControls, OrbitControls } from '@react-three/drei'
 import { Leva, useControls } from 'leva'
@@ -23,6 +23,7 @@ import { Physics } from '@react-three/cannon'
 import { Ceiling } from './components/Ceiling'
 import { useCylinder } from '@react-three/cannon'
 import Sign from './components/Sign'
+import { SceneProvider, useScene } from './contexts/SceneContext'
 
 
 const AVATAR_IDS = {
@@ -124,8 +125,15 @@ const AvatarWithPhysics = ({ children, onLoad, position, rotation }) => {
   )
 }
 
-// Optymalizacja głównego komponentu sceny
-const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selectedAvatar, isLoading }) => {
+// Modyfikacja komponentu Scene, aby używał kontekstu
+const Scene = ({ 
+  isAvatarLoaded, 
+  onAvatarLoaded, 
+  currentAction, 
+  selectedAvatar, 
+  isLoading,
+  forceUpdate
+}) => {
   const currentColors = COLOR_PALETTES[selectedAvatar];
   
   // Stały układ losowy wygenerowany raz na zawsze
@@ -154,6 +162,7 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selec
       onCreated={({ gl, camera }) => {  
         gl.domElement.style.touchAction = 'none'
         camera.lookAt(0, 0, 0)  // Celujemy na wysokości 1m (środek awatara)
+        console.log("Canvas został utworzony"); // Sprawdzamy czy Canvas się tworzy
       }}
     >
       <OrbitControls />
@@ -229,8 +238,9 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selec
               <Sign 
                 position={[0, 3.5, -4.9]} 
                 scale={1.2} 
-                color={currentColors.frontWall} 
+                color={currentColors.frontWall}
               />
+              {console.log("Sign renderowany wewnątrz Canvas")}
               <CoffeeTable />
               <Vase/>
               <Chair />
@@ -271,33 +281,21 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selec
       </Physics>
     </Canvas>
   )
-}, (prevProps, nextProps) => {
-  return prevProps.isAvatarLoaded === nextProps.isAvatarLoaded &&
-         prevProps.currentAction === nextProps.currentAction &&
-         prevProps.selectedAvatar === nextProps.selectedAvatar &&
-         prevProps.isLoading === nextProps.isLoading
-})
+}
 
-const App = () => {
-  const [currentAction, setCurrentAction] = useState('')
-  const [isAvatarLoaded, setIsAvatarLoaded] = useState(false)
-  const [selectedAvatar, setSelectedAvatar] = useState(1)
-  const [isLoading, setIsLoading] = useState(false)
-
-  const handleAvatarChange = useCallback((avatarNumber) => {
-    setIsLoading(true)
-    setSelectedAvatar(avatarNumber)
-    
-    setTimeout(() => {
-      setIsLoading(false)
-      setIsAvatarLoaded(true)
-    }, 2000)
-  }, [selectedAvatar, isLoading])
-
-  const avatarButtons = [1, 2, 3, 4].map((num) => (
+// Nowy komponent dla przycisków awatara
+function AvatarButtons({ selectedAvatar, isLoading, handleAvatarChange }) {
+  const { setCurrentScene } = useScene();
+  
+  const handleAvatarClick = (num) => {
+    handleAvatarChange(num);
+    setCurrentScene(LABELS[num]); // Aktualizujemy scenę przy zmianie awatara
+  };
+  
+  return [1, 2, 3, 4].map((num) => (
     <button
       key={num}
-      onClick={() => handleAvatarChange(num)}
+      onClick={() => handleAvatarClick(num)}
       style={{
         padding: '12px 24px',
         margin: '0 8px',
@@ -314,7 +312,30 @@ const App = () => {
     >
       {isLoading && selectedAvatar === num ? 'Ładowanie...' : LABELS[num]}
     </button>
-  ))
+  ));
+}
+
+const App = () => {
+  const [currentAction, setCurrentAction] = useState('')
+  const [isAvatarLoaded, setIsAvatarLoaded] = useState(false)
+  const [selectedAvatar, setSelectedAvatar] = useState(1)
+  const [isLoading, setIsLoading] = useState(false)
+  const [forceUpdate, setForceUpdate] = useState(0);
+
+  const handleAvatarChange = useCallback((avatarNumber) => {
+    setIsLoading(true)
+    setSelectedAvatar(avatarNumber)
+    
+    setTimeout(() => {
+      setIsLoading(false)
+      setIsAvatarLoaded(true)
+    }, 2000)
+  }, [selectedAvatar, isLoading])
+
+  const handleSceneChange = (sceneName) => {
+    console.log("handleSceneChange wywołany z:", sceneName);
+    setForceUpdate(prev => prev + 1); // Wymuszamy re-render bez przeładowania strony
+  };
 
   return (
     <div className="app-container" style={{ 
@@ -325,53 +346,85 @@ const App = () => {
       left: 0 
     }}>
       <Leva hidden={false} />
-      <ConvaiContext.Provider value={{ currentAction, setCurrentAction }}>
-        <KeyboardControls
-          map={[
-            { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
-            { name: 'backward', keys: ['ArrowDown', 'KeyS'] },
-            { name: 'left', keys: ['ArrowLeft', 'KeyA'] },
-            { name: 'right', keys: ['ArrowRight', 'KeyD'] },
-          ]}
-        >
-          <div className="scene-container">
-            {/* Nowy kontener z przyciskami */}
-            <div style={{
-              position: 'absolute',
-              bottom: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 1000,
-              display: 'flex',
-              gap: '10px',
-              padding: '10px',
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              borderRadius: '8px',
-              backdropFilter: 'blur(4px)'
-            }}>
-              {avatarButtons}
-            </div>
-
-            {!isAvatarLoaded && (
-              <div className="loading-overlay">
-                <LoadingSpinner progress={70} />
+      <SceneProvider>
+        <ConvaiContext.Provider value={{ currentAction, setCurrentAction }}>
+          <KeyboardControls
+            map={[
+              { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
+              { name: 'backward', keys: ['ArrowDown', 'KeyS'] },
+              { name: 'left', keys: ['ArrowLeft', 'KeyA'] },
+              { name: 'right', keys: ['ArrowRight', 'KeyD'] },
+            ]}
+          >
+            <div className="scene-container">
+              {/* Nowy kontener z przyciskami */}
+              <div style={{
+                position: 'absolute',
+                bottom: '20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 1000,
+                display: 'flex',
+                gap: '10px',
+                padding: '10px',
+                backgroundColor: 'rgba(0,0,0,0.5)',
+                borderRadius: '8px',
+                backdropFilter: 'blur(4px)'
+              }}>
+                <AvatarButtons 
+                  selectedAvatar={selectedAvatar} 
+                  isLoading={isLoading} 
+                  handleAvatarChange={handleAvatarChange} 
+                />
               </div>
-            )}
-            <Scene3DErrorBoundary>
-              <Scene 
-                isAvatarLoaded={isAvatarLoaded}
-                onAvatarLoaded={() => setIsAvatarLoaded(true)}
-                currentAction={currentAction}
-                selectedAvatar={selectedAvatar}
-                isLoading={isLoading}
-              />
-            </Scene3DErrorBoundary>
-            {isAvatarLoaded && <ChatInterface characterId={AVATAR_IDS[selectedAvatar]} />}
-          </div>
-        </KeyboardControls>
-      </ConvaiContext.Provider>
+
+              {!isAvatarLoaded && (
+                <div className="loading-overlay">
+                  <LoadingSpinner progress={70} />
+                </div>
+              )}
+              <Scene3DErrorBoundary>
+                <Scene 
+                  key={`scene-${forceUpdate}`}
+                  isAvatarLoaded={isAvatarLoaded}
+                  onAvatarLoaded={() => setIsAvatarLoaded(true)}
+                  currentAction={currentAction}
+                  selectedAvatar={selectedAvatar}
+                  isLoading={isLoading}
+                  forceUpdate={forceUpdate}
+                />
+              </Scene3DErrorBoundary>
+              {isAvatarLoaded && <ChatInterface characterId={AVATAR_IDS[selectedAvatar]} />}
+
+              <SceneButtons />
+            </div>
+          </KeyboardControls>
+        </ConvaiContext.Provider>
+      </SceneProvider>
     </div>
   )
+}
+
+// Nowy komponent dla przycisków sceny
+function SceneButtons() {
+  const { setCurrentScene } = useScene();
+  
+  return (
+    <div className="scene-buttons">
+      <button onClick={() => setCurrentScene("TRANSFORMACJA ENERGETYCZNA")}>
+        Transformacja Energetyczna
+      </button>
+      <button onClick={() => setCurrentScene("HUB ENERGETYCZNY")}>
+        Hub Energetyczny
+      </button>
+      <button onClick={() => {
+        const randomText = "TEST " + Math.floor(Math.random() * 1000);
+        setCurrentScene(randomText);
+      }}>
+        Test Losowego Tekstu
+      </button>
+    </div>
+  );
 }
 
 export default App
