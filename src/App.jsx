@@ -32,31 +32,35 @@ const AVATAR_IDS = {
   4: '2734589a-ef8f-11ef-9966-42010a7be016'
 };
 
-// Dodaj nową stałą z paletami kolorów
+// Modyfikacja stałej z paletami kolorów - dodaję kolory dla wewnętrznej ściany
 const COLOR_PALETTES = {
   1: {
     walls: '#a0a0a0',
     floor: '#4a4a4a',
     ceiling: '#606060',
-    frontWall: '#909090'
+    frontWall: '#909090',
+    insideBackWall: '#d9a295' // Stonowana terrakota zamiast intensywnej czerwieni
   },
   2: {
     walls: '#7c9eb2',
     floor: '#3a5f6f',
     ceiling: '#5a7f8f',
-    frontWall: '#6a8da0'
+    frontWall: '#6a8da0',
+    insideBackWall: '#a0c3d9' // Jasny błękit zamiast intensywnego niebieskiego
   },
   3: {
     walls: '#b28c7c',
     floor: '#6f3a3a',
     ceiling: '#8f5a5a',
-    frontWall: '#a06a6a'
+    frontWall: '#a06a6a',
+    insideBackWall: '#b8cfb9' // Szałwiowa zieleń zamiast intensywnej zieleni
   },
   4: {
     walls: '#7cb27c',
     floor: '#3a6f3a',
     ceiling: '#5a8f5a',
-    frontWall: '#6aa06a'
+    frontWall: '#6aa06a',
+    insideBackWall: '#c9b8d3' // Jasny lawendowy zamiast intensywnego fioletu
   }
 };
 
@@ -256,9 +260,10 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selec
               />
               <Wall
                 name="Inside Back Wall"
-                initialPosition={[3, 2, -2.45]}      // 8m od tyłu w głąb pomieszczenia
-                initialSize={[18, 4, 0.2]}       // Szerokość 18m (72% szerokości podłogi)
-                initialColor={currentColors.walls}
+                initialPosition={[3, 2, -2.45]}
+                initialSize={[18, 4, 0.2]}
+                initialColor={currentColors.insideBackWall}
+                color={currentColors.insideBackWall}
               />
             </group>
           </Suspense>

@@ -1,14 +1,20 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useBox } from '@react-three/cannon'
 import { useControls } from 'leva'
 
-export function Wall({ name, initialPosition = [0, 0, 0], initialSize = [1, 1, 1], initialColor = '#a0a0a0', ...props }) {
+export function Wall({ name, initialPosition = [0, 0, 0], initialSize = [1, 1, 1], initialColor = '#a0a0a0', color, ...props }) {
   const controls = useControls(name || 'Wall', {
     position: { value: initialPosition, label: 'Position' },
     size: { value: initialSize, label: 'Size' },
     color: { value: initialColor, label: 'Color' },
     visible: { value: true, label: 'Visible' }
   })
+
+  useEffect(() => {
+    if (color && color !== controls.color) {
+      controls.color = color
+    }
+  }, [color, controls])
 
   const [ref] = useBox(() => ({
     type: 'Static',
@@ -23,7 +29,7 @@ export function Wall({ name, initialPosition = [0, 0, 0], initialSize = [1, 1, 1
   return (
     <mesh ref={ref} receiveShadow>
       <boxGeometry args={controls.size} />
-      <meshStandardMaterial color={controls.color} />
+      <meshStandardMaterial color={color || controls.color} />
     </mesh>
   )
 } 
