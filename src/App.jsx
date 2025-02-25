@@ -22,6 +22,7 @@ import { FPVCamera } from './components/FPVCamera'
 import { Physics } from '@react-three/cannon'
 import { Ceiling } from './components/Ceiling'
 import { useCylinder } from '@react-three/cannon'
+import Sign from './components/Sign'
 
 
 const AVATAR_IDS = {
@@ -58,6 +59,14 @@ const COLOR_PALETTES = {
     frontWall: '#6aa06a'
   }
 };
+
+// Dodaj stałą z nowymi etykietami
+const LABELS = {
+  1: 'TRANSFORMACJA ENERGETYCZNA FIRM',
+  2: 'HUB ENERGETYCZNY I WODOROWY',
+  3: 'POPRAWA EFEKTYWNOŚCI OZE',
+  4: 'CZYSTE POWIETRZE'
+}
 
 // Optymalizacja ErrorBoundary z lepszą obsługą błędów
 class Scene3DErrorBoundary extends Component {
@@ -134,13 +143,13 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selec
       shadows 
       style={{ background: '#646464' }}
       camera={{ 
-        position: [0, 1.5, 3],  // X: 0, Y: 1.5m (wysokość osoby), Z: 3m od przodu
+        position: [0,1, 3],  // X: 0, Y: 1.5m (wysokość osoby), Z: 3m od przodu
         fov: 75,                // Naturalne pole widzenia
         rotation: [0, Math.PI, 0] // Patrzymy w kierunku ujemnej osi Z
       }}
-      onCreated={({ gl, camera }) => {
+      onCreated={({ gl, camera }) => {  
         gl.domElement.style.touchAction = 'none'
-        camera.lookAt(0, 1, 0)  // Celujemy na wysokości 1m (środek awatara)
+        camera.lookAt(0, 0, 0)  // Celujemy na wysokości 1m (środek awatara)
       }}
     >
       <OrbitControls />
@@ -213,6 +222,11 @@ const Scene = React.memo(({ isAvatarLoaded, onAvatarLoaded, currentAction, selec
               <Ceiling color={currentColors.ceiling} />
               <Tv />
               <Zegar />
+              <Sign 
+                position={[0, 3.5, -4.9]} 
+                scale={1.2} 
+                color={currentColors.frontWall} 
+              />
               <CoffeeTable />
               <Vase/>
               <Chair />
@@ -300,7 +314,7 @@ const App = () => {
         pointerEvents: isLoading ? 'none' : 'auto'
       }}
     >
-      {isLoading && selectedAvatar === num ? 'Ładowanie...' : `Avatar ${num}`}
+      {isLoading && selectedAvatar === num ? 'Ładowanie...' : LABELS[num]}
     </button>
   ))
 
