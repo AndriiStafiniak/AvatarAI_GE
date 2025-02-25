@@ -280,19 +280,12 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(false)
 
   const handleAvatarChange = useCallback((avatarNumber) => {
-    console.groupCollapsed('[App] Avatar change initiated')
-    console.log('Previous avatar:', selectedAvatar)
-    console.log('New avatar:', avatarNumber)
-    console.log('Current loading state:', isLoading)
-    
     setIsLoading(true)
     setSelectedAvatar(avatarNumber)
     
     setTimeout(() => {
-      console.log('[App] Avatar load timeout completed')
       setIsLoading(false)
       setIsAvatarLoaded(true)
-      console.groupEnd()
     }, 2000)
   }, [selectedAvatar, isLoading])
 

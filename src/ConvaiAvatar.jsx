@@ -13,10 +13,7 @@ const AVATAR_ID_4 = '2734589a-ef8f-11ef-9966-42010a7be016'
 const CONVAI_API_URL = 'https://api.convai.com/character/get'
 
 function AvatarModel({ modelUrl, onLoad, ...props }) {
-  console.log(`Renderowanie modelu avatara z URL: ${modelUrl}`)
-  
   const { scene } = useGLTF(modelUrl)
-  console.log('Załadowano model GLTF:', scene)
   
   // Dodajemy kontrolki Leva
   const controls = useControls({
@@ -115,28 +112,19 @@ function AvatarModel({ modelUrl, onLoad, ...props }) {
   const [shouldLoad, setShouldLoad] = useState(false)
 
   useEffect(() => {
-    console.log('Rozpoczęcie opóźnienia ładowania avatara')
     const timer = setTimeout(() => {
-      console.log('Zakończono opóźnienie ładowania avatara')
       setShouldLoad(true)
     }, 2000)
     return () => clearTimeout(timer)
   }, [])
 
   useEffect(() => {
-    console.log('[Avatar] Mounting component for:', AVATAR_ID)
     return () => {
-      console.log('[Avatar] Unmounting component for:', AVATAR_ID)
       // Dodatkowy cleanup jeśli potrzebny
     }
   }, [])
 
-  useEffect(() => {
-    console.log('[Avatar] Model URL changed:', modelUrl)
-  }, [modelUrl])
-
   if (!shouldLoad) {
-    console.log('Avatar: pomijanie renderowania (shouldLoad=false)')
     return null
   }
 
@@ -162,7 +150,6 @@ export function ConvaiAvatar({ onLoad, ...props }) {
 
   useEffect(() => {
     if (!modelUrl) {
-      console.log(`Rozpoczęcie ładowania modelu dla avatara ${AVATAR_ID}`)
       async function fetchCharacterData() {
         try {
           const response = await fetch(CONVAI_API_URL, {
@@ -177,10 +164,8 @@ export function ConvaiAvatar({ onLoad, ...props }) {
           if (!response.ok) throw new Error('Failed to fetch character')
           
           const data = await response.json()
-          console.log('Otrzymano dane z API:', data)
           
           if (data?.model_details?.modelLink) {
-            console.log(`Ustawiam URL modelu: ${data.model_details.modelLink}`)
             setModelUrl(data.model_details.modelLink)
           } else {
             throw new Error('Invalid model URL')

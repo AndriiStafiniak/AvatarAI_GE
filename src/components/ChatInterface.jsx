@@ -29,20 +29,10 @@ export function ChatInterface({ characterId }) {
   }
 
   useEffect(() => {
-    console.log('[Chat] Initializing for character:', characterId)
-    // Resetuj stan czatu przy zmianie avatara
-    setMessages(prev => {
-      console.log('[Chat] Resetting messages from:', prev)
-      return []
-    })
-    setInputMessage('')
-    setIsTyping(false)
-    setShowStarterQuestion(true)
-
     let initializedClient = null
+    
     const initClient = async () => {
       try {
-        console.log('[Chat] Creating new ConvaiClient instance')
         initializedClient = new ConvaiClient({
           apiKey: '2d12bd421e3af7ce47223bce45944908',
           characterId: characterId,
@@ -50,24 +40,14 @@ export function ChatInterface({ characterId }) {
           sessionId: '-1',
           disableAudioGeneration: false
         })
-
-        console.log('[Chat] Client created:', initializedClient)
         
         if (initializedClient.audioContext) {
-          try {
-            console.log('[Chat] Resuming audio context')
-            await initializedClient.audioContext.resume()
-          } catch (audioError) {
-            console.error('[Chat] Audio Context Error:', audioError)
-          }
+          await initializedClient.audioContext.resume()
         }
         
         convaiClient.current = initializedClient
-        console.log('[Chat] Client stored in ref')
 
-        // Setup response callback
         convaiClient.current.setResponseCallback((response) => {
-          console.log('[Chat] Received response:', response)
           if (response.hasUserQuery()) {
             const transcript = response.getUserQuery()
             if (transcript.getIsFinal()) {
@@ -92,7 +72,6 @@ export function ChatInterface({ characterId }) {
           }
         })
 
-        // Setup audio handlers
         convaiClient.current.onAudioPlay(() => {
           window.dispatchEvent(new Event('avatar-talking-start'))
         })
@@ -107,15 +86,11 @@ export function ChatInterface({ characterId }) {
 
     initClient()
     return () => {
-      console.log('[Chat] Cleanup for character:', characterId)
       if (initializedClient) {
-        console.log('[Chat] Closing client:', initializedClient)
         if (typeof initializedClient.destroy === 'function') {
           initializedClient.destroy()
         } else if (typeof initializedClient.close === 'function') {
           initializedClient.close()
-        } else {
-          console.warn('[Chat] Client has no destroy/close method')
         }
       }
     }
@@ -178,12 +153,8 @@ export function ChatInterface({ characterId }) {
         })
         
         if (initializedClient.audioContext) {
-          try {
-            await new Promise(resolve => setTimeout(resolve, 100))
-            await initializedClient.audioContext.resume()
-          } catch (audioError) {
-            console.error('Audio Context Error:', audioError)
-          }
+          await new Promise(resolve => setTimeout(resolve, 100))
+          await initializedClient.audioContext.resume()
         }
         
         convaiClient.current = initializedClient
