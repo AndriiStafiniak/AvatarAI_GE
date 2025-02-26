@@ -73,3 +73,20 @@ div.scene-container {
   background-color: #808080;
   z-index: 1000;
 }
+
+/* Dodaj animację przejścia */
+.avatar-transition {
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.avatar-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.avatar-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: all;
+}

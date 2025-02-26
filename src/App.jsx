@@ -101,8 +101,14 @@ const Scene = ({
   currentAction, 
   selectedAvatar, 
   isLoading,
-  forceUpdate
+  forceUpdate,
+  avatars,
+  visibleAvatar
 }) => {
+  useEffect(() => {
+    console.log('Visible avatar changed:', visibleAvatar)
+  }, [visibleAvatar])
+
   return (
     <Canvas 
       shadows 
@@ -173,13 +179,21 @@ const Scene = ({
           />
           <Suspense fallback={null}>
             <group position={[0, -1, 0]}>
-              {/* Dynamic avatar selection */}
-              {!isLoading && (
+              {!isLoading && avatars && (
                 <>
-                  {selectedAvatar === 1 && <ConvaiAvatar onLoad={onAvatarLoaded} />}
-                  {selectedAvatar === 2 && <ConvaiAvatar2 onLoad={onAvatarLoaded} />}
-                  {selectedAvatar === 3 && <ConvaiAvatar3 onLoad={onAvatarLoaded} />}
-                  {selectedAvatar === 4 && <ConvaiAvatar4 onLoad={onAvatarLoaded} />}
+                  {Object.entries(avatars).map(([id, avatar]) => {
+                    console.log(`Avatar ${id} visibility:`, Number(id) === visibleAvatar)
+                    return (
+                      <group 
+                        key={id} 
+                        visible={Number(id) === visibleAvatar}
+                      >
+                        {React.cloneElement(avatar, {
+                          visible: Number(id) === visibleAvatar
+                        })}
+                      </group>
+                    )
+                  })}
                 </>
               )}
               <ReceptionDesk
@@ -266,21 +280,66 @@ const App = () => {
   const [selectedAvatar, setSelectedAvatar] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
   const [forceUpdate, setForceUpdate] = useState(0);
+  const [avatars, setAvatars] = useState({})
+  const [isLoadingAvatars, setIsLoadingAvatars] = useState(true)
+  const [visibleAvatar, setVisibleAvatar] = useState(1)
 
   const handleAvatarChange = useCallback((avatarNumber) => {
-    setIsLoading(true)
+    setIsAvatarLoaded(false)
     setSelectedAvatar(avatarNumber)
+    setVisibleAvatar(avatarNumber)
     
-    setTimeout(() => {
-      setIsLoading(false)
+    if (avatars[avatarNumber]) {
       setIsAvatarLoaded(true)
-    }, 2000)
-  }, [selectedAvatar, isLoading])
+    }
+  }, [avatars])
 
-  const handleSceneChange = (sceneName) => {
-    console.log("handleSceneChange wywołany z:", sceneName);
-    setForceUpdate(prev => prev + 1); // Wymuszamy re-render bez przeładowania strony
-  };
+  const handleSceneChange = useCallback((sceneName) => {
+    console.log("handleSceneChange wywołany z:", sceneName)
+    setForceUpdate(prev => prev + 1)
+    
+    // Automatyczna zmiana awatara w zależności od sceny
+    const avatarMapping = {
+      'TRANSFORMACJA ENERGETYCZNA': 1,
+      'HUB ENERGETYCZNY I WODOROWY': 2,
+      'POPRAWA EFEKTYWNOŚCI OZE': 3,
+      'CZYSTE POWIETRZE': 4
+    }
+    
+    const newAvatar = avatarMapping[sceneName] || 1
+    setSelectedAvatar(newAvatar)
+    setVisibleAvatar(newAvatar)
+  }, [])
+
+  // Funkcja do ładowania wszystkich awatarów
+  useEffect(() => {
+    const loadAvatars = async () => {
+      try {
+        const loadedAvatars = {
+          1: <ConvaiAvatar onLoad={() => handleAvatarLoad(1)} />,
+          2: <ConvaiAvatar2 onLoad={() => handleAvatarLoad(2)} />,
+          3: <ConvaiAvatar3 onLoad={() => handleAvatarLoad(3)} />,
+          4: <ConvaiAvatar4 onLoad={() => handleAvatarLoad(4)} />
+        }
+        setAvatars(loadedAvatars)
+        setIsLoadingAvatars(false)
+      } catch (error) {
+        console.error('Error loading avatars:', error)
+      }
+    }
+
+    loadAvatars()
+  }, [])
+
+  const handleAvatarLoad = (avatarId) => {
+    if (avatarId === selectedAvatar) {
+      setIsAvatarLoaded(true)
+    }
+  }
+
+  useEffect(() => {
+    console.log('Avatars loaded:', avatars)
+  }, [avatars])
 
   return (
     <div className="app-container" style={{ 
@@ -328,6 +387,8 @@ const App = () => {
                 selectedAvatar={selectedAvatar}
                 isLoading={isLoading}
                 forceUpdate={forceUpdate}
+                avatars={avatars}
+                visibleAvatar={visibleAvatar}
               />
             </Scene3DErrorBoundary>
             {isAvatarLoaded && <ChatInterface characterId={AVATAR_IDS[selectedAvatar]} />}

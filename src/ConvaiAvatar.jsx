@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense, useRef } from 'react'
+import React, { useEffect, useState, Suspense, useRef, useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { SkeletonUtils } from 'three-stdlib'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
@@ -12,7 +12,7 @@ const AVATAR_ID_3 = '9ff38f44-437d-11ef-9187-42010a7be011'
 const AVATAR_ID_4 = '2734589a-ef8f-11ef-9966-42010a7be016'
 const CONVAI_API_URL = 'https://api.convai.com/character/get'
 
-function AvatarModel({ modelUrl, onLoad, ...props }) {
+function AvatarModel({ modelUrl, onLoad, visible, ...props }) {
   const { scene } = useGLTF(modelUrl)
   
   // Dodajemy kontrolki Leva
@@ -124,12 +124,16 @@ function AvatarModel({ modelUrl, onLoad, ...props }) {
     }
   }, [])
 
+  useEffect(() => {
+    useGLTF.preload('/models/avatar1.glb')
+  }, [])
+
   if (!shouldLoad) {
     return null
   }
 
   return (
-    <group ref={groupRef}>
+    <group visible={visible} ref={groupRef}>
       <primitive 
         object={clone} 
         {...props}
@@ -138,7 +142,7 @@ function AvatarModel({ modelUrl, onLoad, ...props }) {
   )
 }
 
-export function ConvaiAvatar({ onLoad, ...props }) {
+export function ConvaiAvatar({ onLoad, visible, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [error, setError] = useState(null)
   const [shouldLoad, setShouldLoad] = useState(false)
@@ -186,6 +190,10 @@ export function ConvaiAvatar({ onLoad, ...props }) {
     }
   }, [modelUrl, error, onLoad])
 
+  useEffect(() => {
+    useGLTF.preload('/models/avatar1.glb')
+  }, [])
+
   if (error) return null
   if (!modelUrl) return null
 
@@ -196,6 +204,7 @@ export function ConvaiAvatar({ onLoad, ...props }) {
       <AvatarModel 
         modelUrl={modelUrl}
         onLoad={onLoad}
+        visible={visible}
         {...props} 
       />
     </Suspense>
@@ -261,6 +270,10 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
       onLoad?.()
     }
   }, [modelUrl, error, onLoad])
+
+  useEffect(() => {
+    useGLTF.preload('/models/avatar1.glb')
+  }, [])
 
   if (error) return null
   if (!modelUrl) return null
@@ -340,6 +353,10 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
     }
   }, [modelUrl, error, onLoad])
 
+  useEffect(() => {
+    useGLTF.preload('/models/avatar1.glb')
+  }, [])
+
   if (error) return null
   if (!modelUrl) return null
 
@@ -417,6 +434,10 @@ export function ConvaiAvatar4({ onLoad, ...props }) {
       onLoad?.()
     }
   }, [modelUrl, error, onLoad])
+
+  useEffect(() => {
+    useGLTF.preload('/models/avatar1.glb')
+  }, [])
 
   if (error) return null
   if (!modelUrl) return null
