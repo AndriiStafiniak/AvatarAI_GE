@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
-import { Grid } from '@react-three/drei'
 
-export const Ceiling = ({ color = '#606060' }) => {
+
+export default function Ceiling({ color = '#606060' }) {
   return (
     <group position={[0, 4.02, 0]}>
       {/* Główna płyta sufitu */}
       <mesh receiveShadow>
-        <boxGeometry args={[25, 0.2, 25]} /> {/* Dopasowane do rozmiaru podłogi 25x25 */}
+        <boxGeometry args={[10, 0.2, 10]} /> {/* Dopasowane do rozmiaru podłogi 25x25 */}
         <meshStandardMaterial 
           color={color}
           metalness={0.1}
@@ -18,9 +18,9 @@ export const Ceiling = ({ color = '#606060' }) => {
       <group position={[0, -0.1, 0]}>
         {useMemo(() => {
           const lights = []
-          const spacing = 6
-          const rows = 2
-          const cols = 2
+          const spacing = 2
+          const rows = 1
+          const cols = 1
 
           for (let x = -cols/2; x <= cols/2; x++) {
             for (let z = -rows/2; z <= rows/2; z++) {

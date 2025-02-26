@@ -3,24 +3,24 @@ import { Canvas } from '@react-three/fiber'
 import { Environment, PresentationControls, OrbitControls } from '@react-three/drei'
 import { Leva, useControls } from 'leva'
 import { ConvaiContext } from './contexts/ConvaiContext'
-import { LoadingSpinner } from './components/LoadingSpinner'
+import  LoadingSpinner  from './components/LoadingSpinner'
 // Importujemy komponenty bezpośrednio zamiast lazy loading
 import { ConvaiAvatar, ConvaiAvatar2, ConvaiAvatar3, ConvaiAvatar4 } from './ConvaiAvatar'
 import { ChatInterface } from './components/ChatInterface'
-import { Floor } from './components/Floor'
-import { Wall } from './components/Wall'
-import { Tv } from './components/Tv'
-import { Zegar } from './components/Zegar'
-import { ReceptionDesk } from './components/ReceptionDesk'
-import { Vase } from './components/Vase'
+import Floor from './components/Floor'
+import Wall from './components/Wall'
+import Tv from './components/Tv'
+import Zegar from './components/Zegar'
+import ReceptionDesk from './components/ReceptionDesk'
+import Vase from './components/Vase'
 import './App.css'
-import { Chair } from './components/Chair'
-import { CoffeeTable } from './components/CoffeeTable'
-import { Rollup } from './components/Rollup'
+import  Chair  from './components/Chair'
+import CoffeeTable from './components/CoffeeTable'
+
 import { KeyboardControls } from '@react-three/drei'
-import { FPVCamera } from './components/FPVCamera'
+
 import { Physics } from '@react-three/cannon'
-import { Ceiling } from './components/Ceiling'
+import Ceiling  from './components/Ceiling'
 import { useCylinder } from '@react-three/cannon'
 import Sign from './components/Sign'
 import { SceneProvider, useScene } from './contexts/SceneContext'
@@ -33,37 +33,8 @@ const AVATAR_IDS = {
   4: '2734589a-ef8f-11ef-9966-42010a7be016'
 };
 
-// Modyfikacja stałej z paletami kolorów - dodaję kolory dla wewnętrznej ściany
-const COLOR_PALETTES = {
-  1: {
-    walls: '#a0a0a0',
-    floor: '#4a4a4a',
-    ceiling: '#606060',
-    frontWall: '#909090',
-    insideBackWall: '#d9a295' // Stonowana terrakota zamiast intensywnej czerwieni
-  },
-  2: {
-    walls: '#7c9eb2',
-    floor: '#3a5f6f',
-    ceiling: '#5a7f8f',
-    frontWall: '#6a8da0',
-    insideBackWall: '#a0c3d9' // Jasny błękit zamiast intensywnego niebieskiego
-  },
-  3: {
-    walls: '#b28c7c',
-    floor: '#6f3a3a',
-    ceiling: '#8f5a5a',
-    frontWall: '#a06a6a',
-    insideBackWall: '#b8cfb9' // Szałwiowa zieleń zamiast intensywnej zieleni
-  },
-  4: {
-    walls: '#7cb27c',
-    floor: '#3a6f3a',
-    ceiling: '#5a8f5a',
-    frontWall: '#6aa06a',
-    insideBackWall: '#c9b8d3' // Jasny lawendowy zamiast intensywnego fioletu
-  }
-};
+// Usuń cały obiekt COLOR_PALETTES i zastąp go pustym
+const COLOR_PALETTES = {}
 
 // Dodaj stałą z nowymi etykietami
 const LABELS = {
@@ -134,35 +105,18 @@ const Scene = ({
   isLoading,
   forceUpdate
 }) => {
-  const currentColors = COLOR_PALETTES[selectedAvatar];
-  
-  // Stały układ losowy wygenerowany raz na zawsze
-  const initialPositions = {
-    insideLeft: [-18.2, 2, 8.7],
-    insideRight: [12.9, 2, -5.3],
-    frontLeft: [-3, 2, 9],
-    frontRight: [25, 2, -13],
-    partition1: [-10, 2, -11],
-    partition2: [3.1, 2, 12],
-    partition3Left: [19.7, 2, 10],
-    partition3Right: [3.4, 2,12],
-    corner1: [18, 2, 19.8],
-    corner2: [-12.6, 2, 19.4]
-  };
-
   return (
     <Canvas 
       shadows 
       style={{ background: '#646464' }}
       camera={{ 
-        position: [0,1, 3],  // X: 0, Y: 1.5m (wysokość osoby), Z: 3m od przodu
-        fov: 75,                // Naturalne pole widzenia
-        rotation: [0, Math.PI, 0] // Patrzymy w kierunku ujemnej osi Z
+        position: [0,1, 3],
+        fov: 75,
+        rotation: [0, Math.PI, 0]
       }}
       onCreated={({ gl, camera }) => {  
         gl.domElement.style.touchAction = 'none'
-        camera.lookAt(0, 0, 0)  // Celujemy na wysokości 1m (środek awatara)
-        console.log("Canvas został utworzony"); // Sprawdzamy czy Canvas się tworzy
+        camera.lookAt(0, 0, 0)
       }}
     >
       <OrbitControls />
@@ -176,8 +130,8 @@ const Scene = ({
           background
           blur={0.5}
           resolution={512}
-          backgroundIntensity={0.6}
-          environmentIntensity={0.8}
+          backgroundIntensity={1.5}
+          environmentIntensity={1.5}
         />
         
         <PresentationControls
@@ -191,10 +145,10 @@ const Scene = ({
           speed={1.5}
           zoom={1}
         >
-          <ambientLight intensity={1.2} color="#ffffff" />
+          <ambientLight intensity={2} color="#ffffff" />
           <directionalLight
             position={[15, 15, 15]}
-            intensity={1.5}
+            intensity={2}
             castShadow
             shadow-mapSize={[4096, 4096]}
             shadow-camera-far={100}
@@ -205,14 +159,19 @@ const Scene = ({
           />
           <pointLight 
             position={[-15, 10, -15]} 
-            intensity={0.8} 
+            intensity={1.2}
             color="#ffeedd"
             decay={0.5}
           />
           <hemisphereLight
-            intensity={0.3}
+            intensity={0.5}
             color="#ffffff"
             groundColor="#404040"
+          />
+          <directionalLight
+            position={[-15, 15, -15]}
+            intensity={1}
+            color="#ffffff"
           />
           <Suspense fallback={null}>
             <group position={[0, -1, 0]}>
@@ -231,14 +190,13 @@ const Scene = ({
                 rotation={[0, Math.PI * 0, 0]}
                 scale={1.1}
               />
-              <Floor color={currentColors.floor} />
-              <Ceiling color={currentColors.ceiling} />
+              <Floor />
+              <Ceiling />
               <Tv />
               <Zegar />
               <Sign 
                 position={[0, 3.5, -4.9]} 
                 scale={1.2} 
-                color={currentColors.frontWall}
               />
               {console.log("Sign renderowany wewnątrz Canvas")}
               <CoffeeTable />
@@ -246,34 +204,23 @@ const Scene = ({
               <Chair />
               <Wall
                 name="Left Wall"
-                initialPosition={[-12.5, 2, 0]}  // Lewa krawędź podłogi (X = -12.5)
-                initialSize={[0.2, 4, 25]}       // Cienka ściana (0.2m), wysokość 4m, długość 25m
-                initialColor={currentColors.walls}
+                initialPosition={[-5, 2, 0]}
+                initialSize={[0.2, 4, 10]}
               />
               <Wall
                 name="Right Wall"
-                initialPosition={[12.5, 2, 0]}   // Prawa krawędź podłogi (X = +12.5)
-                initialSize={[0.2, 4, 25]}       // Cienka ściana (0.2m), wysokość 4m, długość 25m
-                initialColor={currentColors.walls}
+                initialPosition={[5, 2, 0]}
+                initialSize={[0.2, 4, 10]}
               />
               <Wall
                 name="Back Wall"
-                initialPosition={[0, 2, -12.5]}  // Tylna krawędź podłogi (Z = -12.5)
-                initialSize={[25, 4, 0.2]}       // Szerokość 25m, wysokość 4m, cienka ściana (0.2m)
-                initialColor={currentColors.walls}
+                initialPosition={[0, 2, -5]}
+                initialSize={[10, 4, 0.2]}
               />
               <Wall
                 name="Front Wall"
-                initialPosition={[0, 2, 12.5]}    // Przednia krawędź podłogi (Z = +12.5)
-                initialSize={[25, 4, 0.2]}       // Szerokość 25m, wysokość 4m, cienka ściana (0.2m)
-                initialColor={currentColors.frontWall}
-              />
-              <Wall
-                name="Inside Back Wall"
-                initialPosition={[3, 2, -2.45]}
-                initialSize={[18, 4, 0.2]}
-                initialColor={currentColors.insideBackWall}
-                color={currentColors.insideBackWall}
+                initialPosition={[0, 2, 5]}
+                initialSize={[10, 4, 0.2]}
               />
             </group>
           </Suspense>

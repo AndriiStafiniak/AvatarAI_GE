@@ -4,7 +4,7 @@ import { SkeletonUtils } from 'three-stdlib'
 import { useControls } from 'leva'
 import { useBox } from '@react-three/cannon'
 
-export const CoffeeTable = React.memo(() => {
+export default function CoffeeTable() {
   // Kontrolki Leva dla stolika kawowego
   const { position, rotation, scale } = useControls('Coffee Table', {
     position: {
@@ -50,7 +50,7 @@ export const CoffeeTable = React.memo(() => {
       </mesh>
     </group>
   )
-})
+}
 
 // Pre-load modelu
 useGLTF.preload('./models/coffee_table.glb', {

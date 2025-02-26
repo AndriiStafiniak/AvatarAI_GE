@@ -10,9 +10,9 @@ export default function Sign() {
   console.log("Sign renderowany z tekstem:", currentScene)
   
   const { position, scale, color } = useControls('Sign', {
-    position: { value: [0, 3.5, -2.3], step: 0.1 },
+    position: { value: [0, 3.5, -4.8], step: 0.1 },
     scale: { value: 1, min: 0.5, max: 3 },
-    color: { value: '#1a1a1a' }
+    color: { value: '#ffffff' }
   })
 
   React.useLayoutEffect(() => {

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
 import { SkeletonUtils } from 'three-stdlib'
 
-export const ReceptionDesk = React.memo(({ currentAction, position, rotation, scale }) => {
+export default function ReceptionDesk({ currentAction, position, rotation, scale }) {
   const { scene: gltfScene } = useGLTF('./models/resize_reception.glb', {
     draco: true,
     meshOptimizer: true
@@ -18,7 +18,7 @@ export const ReceptionDesk = React.memo(({ currentAction, position, rotation, sc
       />
     </group>
   )
-})
+}
 
 // Pre-load modelu z optymalizacjami
 useGLTF.preload('./models/resize_reception.glb', {

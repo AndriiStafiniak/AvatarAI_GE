@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 // Optymalizacja komponentu zegara z React.memo
-export const Zegar = React.memo(() => {
+export default function Zegar() {
   const { scene } = useGLTF('./models/Zegar.glb', {
     draco: true,
     meshOptimizer: true
@@ -71,7 +71,7 @@ export const Zegar = React.memo(() => {
 
   const { position, rotationY, scale } = useControls('Zegar', {
     position: {
-      value: [-2, 2, -2.5],
+      value: [-2, 2, -5],
       step: 0.1,
     },
     rotationY: {
@@ -100,7 +100,7 @@ export const Zegar = React.memo(() => {
       />
     </Suspense>
   )
-})
+}
 
 // Pre-load modelu z optymalizacjami
 useGLTF.preload('./models/Zegar.glb', {

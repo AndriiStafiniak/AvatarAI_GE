@@ -4,9 +4,9 @@ import { SkeletonUtils } from 'three-stdlib'
 import { useControls } from 'leva'
 import { useBox } from '@react-three/cannon'
 
-export const Vase = React.memo(({ 
+export default function Vase({ 
   currentAction,
-}) => {
+}) {
   // Dodajemy kontrolki Leva dla wazy
   const { position, rotation, scale } = useControls('Vase', {
     position: {
@@ -25,7 +25,7 @@ export const Vase = React.memo(({
     }
   })
 
-  const { scene: gltfScene } = useGLTF('./models/vase.glb', {
+  const { scene: gltfScene } = useGLTF('./models/vase1.glb', {
     draco: true,
     meshOptimizer: true
   })
@@ -52,10 +52,10 @@ export const Vase = React.memo(({
       </mesh>
     </group>
   )
-})
+}
 
 // Pre-load modelu wazy
-useGLTF.preload('./models/vase.glb', {
+useGLTF.preload('./models/vase1.glb', {
   draco: true,
   meshOptimizer: true
 }) 

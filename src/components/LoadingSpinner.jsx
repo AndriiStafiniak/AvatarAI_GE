@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import './LoadingSpinner.css'
 
-export function LoadingSpinner({ progress }) {
+export default function LoadingSpinner({ progress }) {
   const [displayProgress, setDisplayProgress] = useState(0)
 
   useEffect(() => {

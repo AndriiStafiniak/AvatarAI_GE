@@ -4,9 +4,9 @@ import { SkeletonUtils } from 'three-stdlib'
 import { useControls } from 'leva'
 import { useBox } from '@react-three/cannon'
 
-export const Chair = React.memo(({ 
+export default function Chair({ 
   currentAction,
-}) => {
+}) {
   // Kontrolki Leva dla wózka
   const { position, rotation, scale } = useControls('Chair', {
     position: {
@@ -58,7 +58,7 @@ export const Chair = React.memo(({
       </mesh>
     </group>
   )
-})
+}
 
 // Pre-load modelu wózka
 useGLTF.preload('./models/resized_chair.glb', {

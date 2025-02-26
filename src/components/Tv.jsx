@@ -4,7 +4,7 @@ import { useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import { useBox } from '@react-three/cannon'
 
-export function Tv() {
+export default function Tv() {
   const { scene } = useGLTF('./models/Tv.glb')
   const tvRef = useRef()
   const videoRef = useRef()
@@ -12,7 +12,7 @@ export function Tv() {
 
   const { position, rotation, scale } = useControls('TV', {
     position: {
-      value: [3, 2, -2.2],
+      value: [3, 2, -4.8],
       step: 0.1,
     },
     rotation: {
