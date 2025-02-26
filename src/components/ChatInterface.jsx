@@ -212,7 +212,7 @@ export function ChatInterface({ characterId }) {
         className="chat-interface"
         style={{ height: isExpanded ? '500px' : '40px' }}
       >
-        <div className="chat-header" onClick={toggleExpand}>
+        <div className="chat-header">
           <span>Chat</span>
           <div className="header-controls">
             <button 
@@ -222,11 +222,16 @@ export function ChatInterface({ characterId }) {
             >
               <MdRefresh />
             </button>
-            {isExpanded ? (
-              <MdExpandMore className="expand-icon" />
-            ) : (
-              <MdExpandLess className="expand-icon" />
-            )}
+            <div 
+              className="expand-icon-container" 
+              onClick={toggleExpand}
+            >
+              {isExpanded ? (
+                <MdExpandMore className="expand-icon" />
+              ) : (
+                <MdExpandLess className="expand-icon" />
+              )}
+            </div>
             <div className="drag-handle">⋮⋮</div>
           </div>
         </div>
