@@ -17,8 +17,6 @@ import './App.css'
 import  Chair  from './components/Chair'
 import CoffeeTable from './components/CoffeeTable'
 
-import { KeyboardControls } from '@react-three/drei'
-
 import { Physics } from '@react-three/cannon'
 import Ceiling  from './components/Ceiling'
 import { useCylinder } from '@react-three/cannon'
@@ -292,60 +290,50 @@ const App = () => {
       top: 0,
       left: 0 
     }}>
-      <Leva hidden={false} />
       <SceneProvider>
         <ConvaiContext.Provider value={{ currentAction, setCurrentAction }}>
-          <KeyboardControls
-            map={[
-              { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
-              { name: 'backward', keys: ['ArrowDown', 'KeyS'] },
-              { name: 'left', keys: ['ArrowLeft', 'KeyA'] },
-              { name: 'right', keys: ['ArrowRight', 'KeyD'] },
-            ]}
-          >
-            <div className="scene-container">
-              {/* Nowy kontener z przyciskami */}
-              <div style={{
-                position: 'absolute',
-                bottom: '20px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 1000,
-                display: 'flex',
-                gap: '10px',
-                padding: '10px',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                borderRadius: '8px',
-                backdropFilter: 'blur(4px)'
-              }}>
-                <AvatarButtons 
-                  selectedAvatar={selectedAvatar} 
-                  isLoading={isLoading} 
-                  handleAvatarChange={handleAvatarChange} 
-                />
-              </div>
-
-              {!isAvatarLoaded && (
-                <div className="loading-overlay">
-                  <LoadingSpinner progress={70} />
-                </div>
-              )}
-              <Scene3DErrorBoundary>
-                <Scene 
-                  key={`scene-${forceUpdate}`}
-                  isAvatarLoaded={isAvatarLoaded}
-                  onAvatarLoaded={() => setIsAvatarLoaded(true)}
-                  currentAction={currentAction}
-                  selectedAvatar={selectedAvatar}
-                  isLoading={isLoading}
-                  forceUpdate={forceUpdate}
-                />
-              </Scene3DErrorBoundary>
-              {isAvatarLoaded && <ChatInterface characterId={AVATAR_IDS[selectedAvatar]} />}
-
-              <SceneButtons />
+          <div className="scene-container">
+            {/* Nowy kontener z przyciskami */}
+            <div style={{
+              position: 'absolute',
+              bottom: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 1000,
+              display: 'flex',
+              gap: '10px',
+              padding: '10px',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              borderRadius: '8px',
+              backdropFilter: 'blur(4px)'
+            }}>
+              <AvatarButtons 
+                selectedAvatar={selectedAvatar} 
+                isLoading={isLoading} 
+                handleAvatarChange={handleAvatarChange} 
+              />
             </div>
-          </KeyboardControls>
+
+            {!isAvatarLoaded && (
+              <div className="loading-overlay">
+                <LoadingSpinner progress={70} />
+              </div>
+            )}
+            <Scene3DErrorBoundary>
+              <Scene 
+                key={`scene-${forceUpdate}`}
+                isAvatarLoaded={isAvatarLoaded}
+                onAvatarLoaded={() => setIsAvatarLoaded(true)}
+                currentAction={currentAction}
+                selectedAvatar={selectedAvatar}
+                isLoading={isLoading}
+                forceUpdate={forceUpdate}
+              />
+            </Scene3DErrorBoundary>
+            {isAvatarLoaded && <ChatInterface characterId={AVATAR_IDS[selectedAvatar]} />}
+
+            <SceneButtons />
+          </div>
         </ConvaiContext.Provider>
       </SceneProvider>
     </div>
