@@ -114,7 +114,7 @@ function AvatarModel({ modelUrl, onLoad, visible, ...props }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShouldLoad(true)
-    }, 2000)
+    }, 3500)
     return () => clearTimeout(timer)
   }, [])
 
@@ -148,7 +148,7 @@ export function ConvaiAvatar({ onLoad, visible, ...props }) {
   const [shouldLoad, setShouldLoad] = useState(false)
 
   useEffect(() => {
-    const timer = setTimeout(() => setShouldLoad(true), 2000)
+    const timer = setTimeout(() => setShouldLoad(true), 3500)
     return () => clearTimeout(timer)
   }, [])
 
@@ -232,7 +232,7 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
   }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => setShouldLoad(true), 2000)
+    const timer = setTimeout(() => setShouldLoad(true), 3500)
     return () => clearTimeout(timer)
   }, [])
 
@@ -314,7 +314,7 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
   }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => setShouldLoad(true), 2000)
+    const timer = setTimeout(() => setShouldLoad(true), 3500)
     return () => clearTimeout(timer)
   }, [])
 
@@ -396,7 +396,7 @@ export function ConvaiAvatar4({ onLoad, ...props }) {
   }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => setShouldLoad(true), 2000)
+    const timer = setTimeout(() => setShouldLoad(true), 3500)
     return () => clearTimeout(timer)
   }, [])
 

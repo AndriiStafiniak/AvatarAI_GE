@@ -10,7 +10,7 @@ export default function LoadingSpinner({ progress }) {
         if (prev >= progress) return prev
         return Math.min(prev + 1, progress)
       })
-    }, 30)
+    }, 50)
 
     return () => clearInterval(timer)
   }, [progress])
