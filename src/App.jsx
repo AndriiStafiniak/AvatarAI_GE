@@ -105,10 +105,6 @@ const Scene = ({
   avatars,
   visibleAvatar
 }) => {
-  useEffect(() => {
-    console.log('Visible avatar changed:', visibleAvatar)
-  }, [visibleAvatar])
-
   return (
     <Canvas 
       shadows 
@@ -123,12 +119,9 @@ const Scene = ({
         camera.lookAt(0, 0, 0)
       }}
     >
-      <OrbitControls />
+      {/* <OrbitControls /> */}
       <Physics gravity={[0, -9.81, 0]}>
-        {/* <FPVCamera 
-          speed={5} 
-          sensitivity={0.0020}
-        /> */}
+        <Leva hidden={true} />
         <Environment 
           preset="night"
           background
@@ -182,7 +175,6 @@ const Scene = ({
               {!isLoading && avatars && (
                 <>
                   {Object.entries(avatars).map(([id, avatar]) => {
-                    console.log(`Avatar ${id} visibility:`, Number(id) === visibleAvatar)
                     return (
                       <group 
                         key={id} 
@@ -210,7 +202,6 @@ const Scene = ({
                 position={[0, 3.5, -4.9]} 
                 scale={1.2} 
               />
-              {console.log("Sign renderowany wewnątrz Canvas")}
               <CoffeeTable />
               <Vase/>
               <Chair />
@@ -295,7 +286,6 @@ const App = () => {
   }, [avatars])
 
   const handleSceneChange = useCallback((sceneName) => {
-    console.log("handleSceneChange wywołany z:", sceneName)
     setForceUpdate(prev => prev + 1)
     
     // Automatyczna zmiana awatara w zależności od sceny
@@ -336,10 +326,6 @@ const App = () => {
       setIsAvatarLoaded(true)
     }
   }
-
-  useEffect(() => {
-    console.log('Avatars loaded:', avatars)
-  }, [avatars])
 
   return (
     <div className="app-container" style={{ 

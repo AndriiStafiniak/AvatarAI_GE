@@ -175,7 +175,6 @@ export function ConvaiAvatar({ onLoad, visible, ...props }) {
             throw new Error('Invalid model URL')
           }
         } catch (error) {
-          console.error('Błąd podczas pobierania avatara:', error)
           setError(error)
         }
       }
@@ -257,7 +256,6 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
           throw new Error('Invalid model URL')
         }
       } catch (error) {
-        console.error('Error:', error)
         setError(error)
       }
     }
@@ -339,7 +337,6 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
           throw new Error('Invalid model URL')
         }
       } catch (error) {
-        console.error('Error:', error)
         setError(error)
       }
     }
@@ -421,7 +418,6 @@ export function ConvaiAvatar4({ onLoad, ...props }) {
           throw new Error('Invalid model URL')
         }
       } catch (error) {
-        console.error('Error:', error)
         setError(error)
       }
     }

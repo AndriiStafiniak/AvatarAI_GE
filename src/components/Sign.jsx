@@ -7,8 +7,6 @@ import { useScene } from '../contexts/SceneContext'
 export default function Sign() {
   const { currentScene } = useScene()
   
-  console.log("Sign renderowany z tekstem:", currentScene)
-  
   const { position, scale, color } = useControls('Sign', {
     position: { value: [0, 3.5, -4.8], step: 0.1 },
     scale: { value: 1, min: 0.5, max: 3 },
@@ -16,7 +14,6 @@ export default function Sign() {
   })
 
   React.useLayoutEffect(() => {
-    console.log("Sign useLayoutEffect - aktualizacja tekstu:", currentScene);
   }, [currentScene]);
 
   return (
