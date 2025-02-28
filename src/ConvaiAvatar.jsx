@@ -4,6 +4,7 @@ import { SkeletonUtils } from 'three-stdlib'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import * as THREE from 'three'
 import { useControls, folder } from 'leva'
+import { Lipsync } from './components/Lipsync'
 
 const API_KEY = '2d12bd421e3af7ce47223bce45944908'
 const AVATAR_ID = 'fe2da934-6aa4-11ef-8fba-42010a7be011'
@@ -128,6 +129,121 @@ function AvatarModel({ modelUrl, onLoad, visible, ...props }) {
     useGLTF.preload('/models/avatar1.glb')
   }, [])
 
+  // Handle viseme updates
+  useEffect(() => {
+    const handleVisemeUpdate = (event) => {
+      const visemeData = event.detail
+      if (clone && visemeData) {
+        clone.traverse((child) => {
+          if (child.isMesh && child.morphTargetInfluences) {
+            visemeData.forEach((weight, index) => {
+              if (index < child.morphTargetInfluences.length) {
+                child.morphTargetInfluences[index] = weight
+              }
+            })
+          }
+        })
+      }
+    }
+
+    window.addEventListener('viseme-update', handleVisemeUpdate)
+    return () => window.removeEventListener('viseme-update', handleVisemeUpdate)
+  }, [clone])
+
+  // Reset morph targets when audio stops
+  useEffect(() => {
+    const handleTalkingEnd = () => {
+      if (clone) {
+        clone.traverse((child) => {
+          if (child.isMesh && child.morphTargetInfluences) {
+            child.morphTargetInfluences.fill(0)
+          }
+        })
+      }
+    }
+
+    window.addEventListener('avatar-talking-end', handleTalkingEnd)
+    return () => window.removeEventListener('avatar-talking-end', handleTalkingEnd)
+  }, [clone])
+
+  // Dodaj nowe hooki do stanu lipsync
+  const [lipsyncData, setLipsyncData] = useState([])
+  const [currentVisemeFrame, setCurrentVisemeFrame] = useState(0)
+  const timerRef = useRef(0)
+  const animationRef = useRef()
+
+  // Dodaj efekt do animacji lipsync
+  useEffect(() => {
+    const animate = (timestamp) => {
+      if (lipsyncData.length > 0) {
+        timerRef.current += 16/1000 // delta time w sekundach
+        
+        const frame = Math.floor(timerRef.current * 100)
+        setCurrentVisemeFrame(frame)
+
+        if (frame >= lipsyncData.length) {
+          resetMorphs()
+          setLipsyncData([])
+          timerRef.current = 0
+        } else {
+          applyVisemeFrame(frame)
+        }
+      }
+      animationRef.current = requestAnimationFrame(animate)
+    }
+    
+    animationRef.current = requestAnimationFrame(animate)
+    return () => cancelAnimationFrame(animationRef.current)
+  }, [lipsyncData])
+
+  // Funkcja do aplikowania konkretnej klatki animacji
+  const applyVisemeFrame = (frame) => {
+    if (!window.visemeData || frame >= window.visemeData.length) return;
+    
+    clone.traverse((child) => {
+      if (child.isMesh && child.morphTargetInfluences) {
+        for (let i = 0; i < 15; i++) {
+          child.morphTargetInfluences[i] = window.visemeData[frame][i] || 0;
+        }
+      }
+    });
+  }
+
+  // Funkcja do resetowania morph targets
+  const resetMorphs = () => {
+    clone.traverse((child) => {
+      if (child.isMesh && child.morphTargetInfluences) {
+        for (let i = 0; i < 15; i++) {
+          child.morphTargetInfluences[i] = 0
+        }
+      }
+    })
+  }
+
+  // Dodaj efekt do śledzenia zmian w danych lipsync
+  useEffect(() => {
+    const handleVisemeUpdate = () => {
+      if (window.visemeData) {
+        setLipsyncData([...window.visemeData])
+        timerRef.current = 0
+      }
+    }
+    
+    window.addEventListener('viseme-data-update', handleVisemeUpdate)
+    return () => window.removeEventListener('viseme-data-update', handleVisemeUpdate)
+  }, [])
+
+  useEffect(() => {
+    if (clone) {
+      console.log('Struktura modelu:', clone)
+      clone.traverse((child) => {
+        if (child.isMesh) {
+          console.log('Mesh:', child.name, 'Morph targets:', child.morphTargetDictionary)
+        }
+      })
+    }
+  }, [clone])
+
   if (!shouldLoad) {
     return null
   }
@@ -138,6 +254,9 @@ function AvatarModel({ modelUrl, onLoad, visible, ...props }) {
         object={clone} 
         {...props}
       />
+      {clone.nodes && (
+        <Lipsync model={clone} />
+      )}
     </group>
   )
 }

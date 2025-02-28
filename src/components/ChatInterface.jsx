@@ -19,6 +19,7 @@ export function ChatInterface({ characterId }) {
   const convaiClient = useRef(null)
   const finalizedUserText = useRef("")
   const npcTextRef = useRef("")
+  const visemeDataRef = useRef([])
 
   // Dodajemy nowy stan i ikony
   const [isExpanded, setIsExpanded] = useState(true)
@@ -37,6 +38,13 @@ export function ChatInterface({ characterId }) {
           apiKey: '2d12bd421e3af7ce47223bce45944908',
           characterId: characterId,
           enableAudio: true,
+          enableVisemes: true,
+          enableLipSync: true,
+          visemeFrameRate: 100,
+          visemeMapping: {
+            0: 'mouthOpen',
+            1: 'mouthSmile'
+          },
           sessionId: '-1',
           disableAudioGeneration: false
         })
@@ -48,6 +56,7 @@ export function ChatInterface({ characterId }) {
         convaiClient.current = initializedClient
 
         convaiClient.current.setResponseCallback((response) => {
+          console.log('Otrzymano odpowiedź:', response)
           if (response.hasUserQuery()) {
             const transcript = response.getUserQuery()
             if (transcript.getIsFinal()) {
@@ -61,14 +70,45 @@ export function ChatInterface({ characterId }) {
           
           if (response.hasAudioResponse()) {
             const audioResponse = response.getAudioResponse()
-            npcTextRef.current = audioResponse.getTextData()
-            setIsTyping(false)
+            console.log('Pełna odpowiedź audio:', audioResponse)
             
-            setMessages(prev => [...prev, {
-              text: npcTextRef.current,
-              sender: 'bot',
-              audio: audioResponse.getAudioData()
-            }])
+            try {
+              // Generuj prostą animację otwierania/zamykania ust
+              const text = audioResponse.array?.[2]
+              if (text) {
+                console.log('Generuję animację mówienia dla:', text)
+                
+                // Generuj około 2 klatki na znak tekstu
+                const frameCount = text.length * 2
+                const frames = []
+                
+                // Generuj naprzemiennie otwarte i zamknięte usta
+                for (let i = 0; i < frameCount; i++) {
+                  if (i % 2 === 0) {
+                    frames.push([0.7, 0]) // Usta otwarte
+                  } else {
+                    frames.push([0, 0]) // Usta zamknięte
+                  }
+                }
+                
+                console.log('Wygenerowano klatki animacji:', frames.length)
+                window.visemeData = frames
+                window.visemeDataActive = true
+                window.dispatchEvent(new Event('viseme-data-update'))
+              }
+
+              npcTextRef.current = text || ''
+              setIsTyping(false)
+              
+              setMessages(prev => [...prev, {
+                text: npcTextRef.current,
+                sender: 'bot',
+                audio: audioResponse.array?.[0]
+              }])
+            } catch (error) {
+              console.error('Błąd przetwarzania audio response:', error)
+              console.error('Stack:', error.stack)
+            }
           }
         })
 
@@ -95,6 +135,18 @@ export function ChatInterface({ characterId }) {
       }
     }
   }, [characterId])
+
+  // Dodaj nowy efekt do czyszczenia danych po zatrzymaniu audio
+  useEffect(() => {
+    const clearVisemeData = () => {
+      window.visemeData = []
+      window.visemeDataActive = false
+      visemeDataRef.current = []
+    }
+    
+    window.addEventListener('avatar-talking-end', clearVisemeData)
+    return () => window.removeEventListener('avatar-talking-end', clearVisemeData)
+  }, [])
 
   const sendTextMessage = async (e) => {
     e?.preventDefault()
@@ -148,6 +200,13 @@ export function ChatInterface({ characterId }) {
           apiKey: '2d12bd421e3af7ce47223bce45944908',
           characterId: characterId,
           enableAudio: true,
+          enableVisemes: true,
+          enableLipSync: true,
+          visemeFrameRate: 100,
+          visemeMapping: {
+            0: 'mouthOpen',
+            1: 'mouthSmile'
+          },
           sessionId: '-1',
           disableAudioGeneration: false
         })
@@ -161,6 +220,7 @@ export function ChatInterface({ characterId }) {
 
         // Setup response callback
         convaiClient.current.setResponseCallback((response) => {
+          console.log('Otrzymano odpowiedź:', response)
           if (response.hasUserQuery()) {
             const transcript = response.getUserQuery()
             if (transcript.getIsFinal()) {
@@ -174,14 +234,45 @@ export function ChatInterface({ characterId }) {
           
           if (response.hasAudioResponse()) {
             const audioResponse = response.getAudioResponse()
-            npcTextRef.current = audioResponse.getTextData()
-            setIsTyping(false)
+            console.log('Pełna odpowiedź audio:', audioResponse)
             
-            setMessages(prev => [...prev, {
-              text: npcTextRef.current,
-              sender: 'bot',
-              audio: audioResponse.getAudioData()
-            }])
+            try {
+              // Generuj prostą animację otwierania/zamykania ust
+              const text = audioResponse.array?.[2]
+              if (text) {
+                console.log('Generuję animację mówienia dla:', text)
+                
+                // Generuj około 2 klatki na znak tekstu
+                const frameCount = text.length * 2
+                const frames = []
+                
+                // Generuj naprzemiennie otwarte i zamknięte usta
+                for (let i = 0; i < frameCount; i++) {
+                  if (i % 2 === 0) {
+                    frames.push([0.7, 0]) // Usta otwarte
+                  } else {
+                    frames.push([0, 0]) // Usta zamknięte
+                  }
+                }
+                
+                console.log('Wygenerowano klatki animacji:', frames.length)
+                window.visemeData = frames
+                window.visemeDataActive = true
+                window.dispatchEvent(new Event('viseme-data-update'))
+              }
+
+              npcTextRef.current = text || ''
+              setIsTyping(false)
+              
+              setMessages(prev => [...prev, {
+                text: npcTextRef.current,
+                sender: 'bot',
+                audio: audioResponse.array?.[0]
+              }])
+            } catch (error) {
+              console.error('Błąd przetwarzania audio response:', error)
+              console.error('Stack:', error.stack)
+            }
           }
         })
 
