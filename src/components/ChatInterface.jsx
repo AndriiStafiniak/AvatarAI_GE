@@ -4,7 +4,7 @@ import './ChatInterface.css'
 import { MdSend, MdRefresh, MdExpandMore, MdExpandLess } from 'react-icons/md'
 import { ConvaiClient } from 'convai-web-sdk'
 
-export function ChatInterface({ characterId }) {
+export default function ChatInterface({ characterId }) {
   const [messages, setMessages] = useState([])
   const [inputMessage, setInputMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -54,6 +54,7 @@ export function ChatInterface({ characterId }) {
                 text: finalizedUserText.current,
                 sender: 'user'
               }])
+              finalizedUserText.current = ""
             }
           }
           
@@ -62,25 +63,31 @@ export function ChatInterface({ characterId }) {
             console.log('Pełna odpowiedź audio:', audioResponse)
             
             try {
-              // Generuj prostą animację otwierania/zamykania ust
               const text = audioResponse.array?.[2]
-              if (text) {
+              const audioData = audioResponse.array?.[0]
+              
+              if (text && audioData) {
+                window.visemeData = []
+                window.visemeDataActive = false
+                
                 console.log('Generuję animację mówienia dla:', text)
                 
-                // Generuj około 2 klatki na znak tekstu
-                const frameCount = text.length * 2
+                const audioLengthSeconds = audioData.length / 22050
+                console.log('Długość audio (s):', audioLengthSeconds)
+                
+                const framesPerSecond = 60
+                const totalFrames = Math.ceil(audioLengthSeconds * framesPerSecond)
+                const cycleLength = 0.3
+                const framesPerCycle = Math.ceil(cycleLength * framesPerSecond)
+                
                 const frames = []
                 
-                // Generuj naprzemiennie otwarte i zamknięte usta
-                for (let i = 0; i < frameCount; i++) {
-                  if (i % 2 === 0) {
-                    frames.push([0.7, 0]) // Usta otwarte
-                  } else {
-                    frames.push([0, 0]) // Usta zamknięte
-                  }
+                for (let i = 0; i < totalFrames; i++) {
+                  const cyclePosition = (i % framesPerCycle) / framesPerCycle
+                  const openAmount = Math.sin(cyclePosition * Math.PI) * 0.7
+                  frames.push([Math.max(0, openAmount), 0])
                 }
                 
-                console.log('Wygenerowano klatki animacji:', frames.length)
                 window.visemeData = frames
                 window.visemeDataActive = true
                 window.dispatchEvent(new Event('viseme-data-update'))
@@ -195,7 +202,7 @@ export function ChatInterface({ characterId }) {
         })
         
         if (initializedClient.audioContext) {
-          await new Promise(resolve => setTimeout(resolve, 100))
+          await new Promise(resolve => setTimeout(resolve, 10))
           await initializedClient.audioContext.resume()
         }
         
@@ -211,6 +218,7 @@ export function ChatInterface({ characterId }) {
                 text: finalizedUserText.current,
                 sender: 'user'
               }])
+              finalizedUserText.current = ""
             }
           }
           
@@ -219,25 +227,31 @@ export function ChatInterface({ characterId }) {
             console.log('Pełna odpowiedź audio:', audioResponse)
             
             try {
-              // Generuj prostą animację otwierania/zamykania ust
               const text = audioResponse.array?.[2]
-              if (text) {
+              const audioData = audioResponse.array?.[0]
+              
+              if (text && audioData) {
+                window.visemeData = []
+                window.visemeDataActive = false
+                
                 console.log('Generuję animację mówienia dla:', text)
                 
-                // Generuj około 2 klatki na znak tekstu
-                const frameCount = text.length * 2
+                const audioLengthSeconds = audioData.length / 22050
+                console.log('Długość audio (s):', audioLengthSeconds)
+                
+                const framesPerSecond = 60
+                const totalFrames = Math.ceil(audioLengthSeconds * framesPerSecond)
+                const cycleLength = 0.3
+                const framesPerCycle = Math.ceil(cycleLength * framesPerSecond)
+                
                 const frames = []
                 
-                // Generuj naprzemiennie otwarte i zamknięte usta
-                for (let i = 0; i < frameCount; i++) {
-                  if (i % 2 === 0) {
-                    frames.push([0.7, 0]) // Usta otwarte
-                  } else {
-                    frames.push([0, 0]) // Usta zamknięte
-                  }
+                for (let i = 0; i < totalFrames; i++) {
+                  const cyclePosition = (i % framesPerCycle) / framesPerCycle
+                  const openAmount = Math.sin(cyclePosition * Math.PI) * 0.7
+                  frames.push([Math.max(0, openAmount), 0])
                 }
                 
-                console.log('Wygenerowano klatki animacji:', frames.length)
                 window.visemeData = frames
                 window.visemeDataActive = true
                 window.dispatchEvent(new Event('viseme-data-update'))

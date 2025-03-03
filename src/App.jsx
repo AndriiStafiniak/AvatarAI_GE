@@ -6,7 +6,7 @@ import { ConvaiContext } from './contexts/ConvaiContext'
 import  LoadingSpinner  from './components/LoadingSpinner'
 // Importujemy komponenty bezpośrednio zamiast lazy loading
 import { ConvaiAvatar, ConvaiAvatar2, ConvaiAvatar3, ConvaiAvatar4 } from './ConvaiAvatar'
-import { ChatInterface } from './components/ChatInterface'
+import  ChatInterface  from './components/ChatInterface'
 import Floor from './components/Floor'
 import Wall from './components/Wall'
 import Tv from './components/Tv'
