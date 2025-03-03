@@ -4,7 +4,7 @@ import { SkeletonUtils } from 'three-stdlib'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import * as THREE from 'three'
 import { useControls, folder } from 'leva'
-import { Lipsync } from './components/Lipsync'
+import Lipsync  from './components/Lipsync'
 
 const API_KEY = '2d12bd421e3af7ce47223bce45944908'
 const AVATAR_ID = 'fe2da934-6aa4-11ef-8fba-42010a7be011'
