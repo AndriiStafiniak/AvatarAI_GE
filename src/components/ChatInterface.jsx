@@ -4,30 +4,19 @@ import './ChatInterface.css'
 import { MdSend, MdRefresh, MdExpandMore, MdExpandLess } from 'react-icons/md'
 import { ConvaiClient } from 'convai-web-sdk'
 
-const DEFAULT_QUESTION = "Cześć! Jak się masz?"
-
 export function ChatInterface({ characterId }) {
   const [messages, setMessages] = useState([])
   const [inputMessage, setInputMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [showStarterQuestion, setShowStarterQuestion] = useState(true)
   const messagesEndRef = useRef(null)
   const chatContainerRef = useRef(null)
   const nodeRef = useRef(null)
   
-  // Convai Client refs
   const convaiClient = useRef(null)
   const finalizedUserText = useRef("")
   const npcTextRef = useRef("")
-  const visemeDataRef = useRef([])
 
-  // Dodajemy nowy stan i ikony
   const [isExpanded, setIsExpanded] = useState(true)
-
-  // Funkcja do przełączania stanu
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded)
-  }
 
   useEffect(() => {
     let initializedClient = null
@@ -136,12 +125,10 @@ export function ChatInterface({ characterId }) {
     }
   }, [characterId])
 
-  // Dodaj nowy efekt do czyszczenia danych po zatrzymaniu audio
   useEffect(() => {
     const clearVisemeData = () => {
       window.visemeData = []
       window.visemeDataActive = false
-      visemeDataRef.current = []
     }
     
     window.addEventListener('avatar-talking-end', clearVisemeData)
@@ -152,7 +139,6 @@ export function ChatInterface({ characterId }) {
     e?.preventDefault()
     if (!inputMessage.trim()) return
 
-    setShowStarterQuestion(false)
     setIsTyping(true)
     
     setMessages(prev => [...prev, {
@@ -181,9 +167,7 @@ export function ChatInterface({ characterId }) {
     setMessages([])
     setInputMessage('')
     setIsTyping(false)
-    setShowStarterQuestion(true)
     
-    // Reinitialize Convai client
     if (convaiClient.current) {
       if (typeof convaiClient.current.destroy === 'function') {
         convaiClient.current.destroy()
@@ -193,7 +177,6 @@ export function ChatInterface({ characterId }) {
       convaiClient.current = null
     }
     
-    // Initialize new client
     const initClient = async () => {
       try {
         const initializedClient = new ConvaiClient({
@@ -218,7 +201,6 @@ export function ChatInterface({ characterId }) {
         
         convaiClient.current = initializedClient
 
-        // Setup response callback
         convaiClient.current.setResponseCallback((response) => {
           console.log('Otrzymano odpowiedź:', response)
           if (response.hasUserQuery()) {
@@ -276,7 +258,6 @@ export function ChatInterface({ characterId }) {
           }
         })
 
-        // Setup audio handlers
         convaiClient.current.onAudioPlay(() => {
           window.dispatchEvent(new Event('avatar-talking-start'))
         })
@@ -290,6 +271,10 @@ export function ChatInterface({ characterId }) {
     }
     
     await initClient()
+  }
+
+  const toggleExpand = () => {
+    setIsExpanded(!isExpanded)
   }
 
   return (
