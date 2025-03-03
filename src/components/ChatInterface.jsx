@@ -15,6 +15,8 @@ export default function ChatInterface({ characterId }) {
   const convaiClient = useRef(null)
   const finalizedUserText = useRef("")
   const npcTextRef = useRef("")
+  const botResponseText = useRef("")
+  const botAudioData = useRef([])
 
   const [isExpanded, setIsExpanded] = useState(true)
 
@@ -45,35 +47,42 @@ export default function ChatInterface({ characterId }) {
         convaiClient.current = initializedClient
 
         convaiClient.current.setResponseCallback((response) => {
-          console.log('Otrzymano odpowiedź:', response)
           if (response.hasUserQuery()) {
             const transcript = response.getUserQuery()
             if (transcript.getIsFinal()) {
               finalizedUserText.current += " " + transcript.getTextData()
+              console.log('Wiadomość użytkownika:', finalizedUserText.current.trim())
               setMessages(prev => [...prev, {
-                text: finalizedUserText.current,
+                text: finalizedUserText.current.trim(),
                 sender: 'user'
               }])
               finalizedUserText.current = ""
+              botResponseText.current = ""
+              botAudioData.current = []
             }
           }
           
           if (response.hasAudioResponse()) {
             const audioResponse = response.getAudioResponse()
-            console.log('Pełna odpowiedź audio:', audioResponse)
             
             try {
               const text = audioResponse.array?.[2]
               const audioData = audioResponse.array?.[0]
               
+              if (text) {
+                botResponseText.current += text + " "
+                console.log('Aktualny tekst bota:', botResponseText.current.trim())
+              }
+              if (audioData) {
+                botAudioData.current.push(audioData)
+              }
+              
               if (text && audioData) {
                 window.visemeData = []
                 window.visemeDataActive = false
                 
-                console.log('Generuję animację mówienia dla:', text)
-                
-                const audioLengthSeconds = audioData.length / 22050
-                console.log('Długość audio (s):', audioLengthSeconds)
+                const totalAudioLength = botAudioData.current.reduce((acc, curr) => acc + curr.length, 0)
+                const audioLengthSeconds = totalAudioLength / 22050
                 
                 const framesPerSecond = 60
                 const totalFrames = Math.ceil(audioLengthSeconds * framesPerSecond)
@@ -105,17 +114,34 @@ export default function ChatInterface({ characterId }) {
                 window.dispatchEvent(new Event('viseme-data-update'))
               }
 
-              npcTextRef.current = text || ''
+              npcTextRef.current = botResponseText.current.trim()
               setIsTyping(false)
               
-              setMessages(prev => [...prev, {
-                text: npcTextRef.current,
-                sender: 'bot',
-                audio: audioResponse.array?.[0]
-              }])
+              if (!response.hasUserQuery()) {
+                console.log('Finalna wiadomość bota:', botResponseText.current.trim())
+                setMessages(prev => {
+                  const lastMessage = prev[prev.length - 1]
+                  if (lastMessage && lastMessage.sender === 'bot') {
+                    // Aktualizujemy ostatnią wiadomość bota
+                    const updatedMessages = [...prev]
+                    updatedMessages[prev.length - 1] = {
+                      text: botResponseText.current.trim(),
+                      sender: 'bot',
+                      audio: botAudioData.current
+                    }
+                    return updatedMessages
+                  } else {
+                    // Tworzymy nową wiadomość bota
+                    return [...prev, {
+                      text: botResponseText.current.trim(),
+                      sender: 'bot',
+                      audio: botAudioData.current
+                    }]
+                  }
+                })
+              }
             } catch (error) {
-              console.error('Błąd przetwarzania audio response:', error)
-              console.error('Stack:', error.stack)
+              console.error('Błąd przetwarzania wiadomości:', error)
             }
           }
         })
@@ -221,40 +247,47 @@ export default function ChatInterface({ characterId }) {
         convaiClient.current = initializedClient
 
         convaiClient.current.setResponseCallback((response) => {
-          console.log('Otrzymano odpowiedź:', response)
           if (response.hasUserQuery()) {
             const transcript = response.getUserQuery()
             if (transcript.getIsFinal()) {
               finalizedUserText.current += " " + transcript.getTextData()
+              console.log('Wiadomość użytkownika:', finalizedUserText.current.trim())
               setMessages(prev => [...prev, {
-                text: finalizedUserText.current,
+                text: finalizedUserText.current.trim(),
                 sender: 'user'
               }])
               finalizedUserText.current = ""
+              botResponseText.current = ""
+              botAudioData.current = []
             }
           }
           
           if (response.hasAudioResponse()) {
             const audioResponse = response.getAudioResponse()
-            console.log('Pełna odpowiedź audio:', audioResponse)
             
             try {
               const text = audioResponse.array?.[2]
               const audioData = audioResponse.array?.[0]
               
+              if (text) {
+                botResponseText.current += text + " "
+                console.log('Aktualny tekst bota:', botResponseText.current.trim())
+              }
+              if (audioData) {
+                botAudioData.current.push(audioData)
+              }
+              
               if (text && audioData) {
                 window.visemeData = []
                 window.visemeDataActive = false
                 
-                console.log('Generuję animację mówienia dla:', text)
-                
-                const audioLengthSeconds = audioData.length / 22050
-                console.log('Długość audio (s):', audioLengthSeconds)
+                const totalAudioLength = botAudioData.current.reduce((acc, curr) => acc + curr.length, 0)
+                const audioLengthSeconds = totalAudioLength / 22050
                 
                 const framesPerSecond = 60
                 const totalFrames = Math.ceil(audioLengthSeconds * framesPerSecond)
-                const cycleLength = 0.3
-                const pauseLength = 0.1 // 0.1s pauzy między cyklami
+                const cycleLength = 0.9
+                const pauseLength = 0.3 // 0.1s pauzy między cyklami
                 const fullCycleLength = cycleLength + pauseLength
                 const framesPerFullCycle = Math.ceil(fullCycleLength * framesPerSecond)
                 const framesPerCycle = Math.ceil(cycleLength * framesPerSecond)
@@ -281,17 +314,34 @@ export default function ChatInterface({ characterId }) {
                 window.dispatchEvent(new Event('viseme-data-update'))
               }
 
-              npcTextRef.current = text || ''
+              npcTextRef.current = botResponseText.current.trim()
               setIsTyping(false)
               
-              setMessages(prev => [...prev, {
-                text: npcTextRef.current,
-                sender: 'bot',
-                audio: audioResponse.array?.[0]
-              }])
+              if (!response.hasUserQuery()) {
+                console.log('Finalna wiadomość bota:', botResponseText.current.trim())
+                setMessages(prev => {
+                  const lastMessage = prev[prev.length - 1]
+                  if (lastMessage && lastMessage.sender === 'bot') {
+                    // Aktualizujemy ostatnią wiadomość bota
+                    const updatedMessages = [...prev]
+                    updatedMessages[prev.length - 1] = {
+                      text: botResponseText.current.trim(),
+                      sender: 'bot',
+                      audio: botAudioData.current
+                    }
+                    return updatedMessages
+                  } else {
+                    // Tworzymy nową wiadomość bota
+                    return [...prev, {
+                      text: botResponseText.current.trim(),
+                      sender: 'bot',
+                      audio: botAudioData.current
+                    }]
+                  }
+                })
+              }
             } catch (error) {
-              console.error('Błąd przetwarzania audio response:', error)
-              console.error('Stack:', error.stack)
+              console.error('Błąd przetwarzania wiadomości:', error)
             }
           }
         })
