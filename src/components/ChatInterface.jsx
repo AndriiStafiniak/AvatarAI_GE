@@ -77,15 +77,27 @@ export default function ChatInterface({ characterId }) {
                 
                 const framesPerSecond = 60
                 const totalFrames = Math.ceil(audioLengthSeconds * framesPerSecond)
-                const cycleLength = 0.3
+                const cycleLength = 0.6
+                const pauseLength = 0.1 // 0.1s pauzy między cyklami
+                const fullCycleLength = cycleLength + pauseLength
+                const framesPerFullCycle = Math.ceil(fullCycleLength * framesPerSecond)
                 const framesPerCycle = Math.ceil(cycleLength * framesPerSecond)
+                const framesPerPause = Math.ceil(pauseLength * framesPerSecond)
                 
                 const frames = []
                 
                 for (let i = 0; i < totalFrames; i++) {
-                  const cyclePosition = (i % framesPerCycle) / framesPerCycle
-                  const openAmount = Math.sin(cyclePosition * Math.PI) * 0.7
-                  frames.push([Math.max(0, openAmount), 0])
+                  const cyclePosition = (i % framesPerFullCycle)
+                  
+                  if (cyclePosition < framesPerCycle) {
+                    // Podczas aktywnej części cyklu - usta się ruszają
+                    const activePosition = cyclePosition / framesPerCycle
+                    const openAmount = Math.sin(activePosition * Math.PI) * 0.7
+                    frames.push([Math.max(0, openAmount), 0])
+                  } else {
+                    // Podczas pauzy - usta zamknięte
+                    frames.push([0, 0])
+                  }
                 }
                 
                 window.visemeData = frames
@@ -242,14 +254,26 @@ export default function ChatInterface({ characterId }) {
                 const framesPerSecond = 60
                 const totalFrames = Math.ceil(audioLengthSeconds * framesPerSecond)
                 const cycleLength = 0.3
+                const pauseLength = 0.1 // 0.1s pauzy między cyklami
+                const fullCycleLength = cycleLength + pauseLength
+                const framesPerFullCycle = Math.ceil(fullCycleLength * framesPerSecond)
                 const framesPerCycle = Math.ceil(cycleLength * framesPerSecond)
+                const framesPerPause = Math.ceil(pauseLength * framesPerSecond)
                 
                 const frames = []
                 
                 for (let i = 0; i < totalFrames; i++) {
-                  const cyclePosition = (i % framesPerCycle) / framesPerCycle
-                  const openAmount = Math.sin(cyclePosition * Math.PI) * 0.7
-                  frames.push([Math.max(0, openAmount), 0])
+                  const cyclePosition = (i % framesPerFullCycle)
+                  
+                  if (cyclePosition < framesPerCycle) {
+                    // Podczas aktywnej części cyklu - usta się ruszają
+                    const activePosition = cyclePosition / framesPerCycle
+                    const openAmount = Math.sin(activePosition * Math.PI) * 0.7
+                    frames.push([Math.max(0, openAmount), 0])
+                  } else {
+                    // Podczas pauzy - usta zamknięte
+                    frames.push([0, 0])
+                  }
                 }
                 
                 window.visemeData = frames
