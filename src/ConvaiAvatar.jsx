@@ -13,7 +13,17 @@ const AVATAR_ID_3 = '9ff38f44-437d-11ef-9187-42010a7be011'
 const AVATAR_ID_4 = '2734589a-ef8f-11ef-9966-42010a7be016'
 const CONVAI_API_URL = 'https://api.convai.com/character/get'
 
-function AvatarModel({ modelUrl, onLoad, visible, ...props }) {
+// Na początku pliku dodaj stan globalny dla aktywnego awatara
+let activeAvatarType = 1;
+
+// Zmodyfikuj funkcję emitAvatarTypeChange
+const emitAvatarTypeChange = (type) => {
+  console.log('Emitting avatar type change:', type);
+  activeAvatarType = type; // Zapisz aktywny typ
+  window.dispatchEvent(new CustomEvent('avatar-type-change', { detail: type }));
+}
+
+function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
   const { scene } = useGLTF(modelUrl)
   
   // Dodajemy kontrolki Leva
@@ -235,14 +245,20 @@ function AvatarModel({ modelUrl, onLoad, visible, ...props }) {
 
   useEffect(() => {
     if (clone) {
-      console.log('Struktura modelu:', clone)
       clone.traverse((child) => {
         if (child.isMesh) {
-          console.log('Mesh:', child.name, 'Morph targets:', child.morphTargetDictionary)
+          // Usunięto console.log pokazujący morph targets
         }
       })
     }
   }, [clone])
+
+  useEffect(() => {
+    if (avatarType && visible) {
+      console.log('AvatarModel received avatarType:', avatarType, 'visible:', visible);
+      emitAvatarTypeChange(avatarType);
+    }
+  }, [avatarType, visible]);
 
   if (!shouldLoad) {
     return null
@@ -265,6 +281,7 @@ export function ConvaiAvatar({ onLoad, visible, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [error, setError] = useState(null)
   const [shouldLoad, setShouldLoad] = useState(false)
+  const [avatarType, setAvatarType] = useState(1)
 
   useEffect(() => {
     const timer = setTimeout(() => setShouldLoad(true), 3500)
@@ -290,6 +307,10 @@ export function ConvaiAvatar({ onLoad, visible, ...props }) {
           
           if (data?.model_details?.modelLink) {
             setModelUrl(data.model_details.modelLink)
+            setAvatarType(1)
+            if (visible) {
+              emitAvatarTypeChange(1)
+            }
           } else {
             throw new Error('Invalid model URL')
           }
@@ -299,7 +320,7 @@ export function ConvaiAvatar({ onLoad, visible, ...props }) {
       }
       fetchCharacterData()
     }
-  }, [modelUrl])
+  }, [modelUrl, visible])
 
   useEffect(() => {
     if (modelUrl && !error) {
@@ -323,18 +344,20 @@ export function ConvaiAvatar({ onLoad, visible, ...props }) {
         modelUrl={modelUrl}
         onLoad={onLoad}
         visible={visible}
+        avatarType={avatarType}
         {...props} 
       />
     </Suspense>
   )
 }
 
-export function ConvaiAvatar2({ onLoad, ...props }) {
+export function ConvaiAvatar2({ onLoad, visible = false, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [isTalking, setIsTalking] = useState(false)
   const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
   const [shouldLoad, setShouldLoad] = useState(false)
+  const [avatarType, setAvatarType] = useState(2)
 
   useEffect(() => {
     const handleTalkingStart = () => setIsTalking(true)
@@ -371,6 +394,10 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
         const data = await response.json()
         if (data?.model_details?.modelLink) {
           setModelUrl(data.model_details.modelLink)
+          setAvatarType(2)
+          if (visible) {
+            emitAvatarTypeChange(2)
+          }
         } else {
           throw new Error('Invalid model URL')
         }
@@ -379,7 +406,7 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
       }
     }
     fetchCharacterData()
-  }, [])
+  }, [visible])
 
   useEffect(() => {
     if (modelUrl && !error) {
@@ -404,18 +431,20 @@ export function ConvaiAvatar2({ onLoad, ...props }) {
         isPlaying={isTalking}
         currentAction={currentAction}
         onLoad={onLoad}
+        avatarType={avatarType}
         {...props} 
       />
     </Suspense>
   )
 }
 
-export function ConvaiAvatar3({ onLoad, ...props }) {
+export function ConvaiAvatar3({ onLoad, visible = false, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [isTalking, setIsTalking] = useState(false)
   const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
   const [shouldLoad, setShouldLoad] = useState(false)
+  const [avatarType, setAvatarType] = useState(3)
 
   useEffect(() => {
     const handleTalkingStart = () => setIsTalking(true)
@@ -452,6 +481,10 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
         const data = await response.json()
         if (data?.model_details?.modelLink) {
           setModelUrl(data.model_details.modelLink)
+          setAvatarType(3)
+          if (visible) {
+            emitAvatarTypeChange(3)
+          }
         } else {
           throw new Error('Invalid model URL')
         }
@@ -460,7 +493,7 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
       }
     }
     fetchCharacterData()
-  }, [])
+  }, [visible])
 
   useEffect(() => {
     if (modelUrl && !error) {
@@ -485,18 +518,20 @@ export function ConvaiAvatar3({ onLoad, ...props }) {
         isPlaying={isTalking}
         currentAction={currentAction}
         onLoad={onLoad}
+        avatarType={avatarType}
         {...props} 
       />
     </Suspense>
   )
 }
 
-export function ConvaiAvatar4({ onLoad, ...props }) {
+export function ConvaiAvatar4({ onLoad, visible = false, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [isTalking, setIsTalking] = useState(false)
   const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
   const [shouldLoad, setShouldLoad] = useState(false)
+  const [avatarType, setAvatarType] = useState(4)
 
   useEffect(() => {
     const handleTalkingStart = () => setIsTalking(true)
@@ -533,6 +568,10 @@ export function ConvaiAvatar4({ onLoad, ...props }) {
         const data = await response.json()
         if (data?.model_details?.modelLink) {
           setModelUrl(data.model_details.modelLink)
+          setAvatarType(4)
+          if (visible) {
+            emitAvatarTypeChange(4)
+          }
         } else {
           throw new Error('Invalid model URL')
         }
@@ -541,7 +580,7 @@ export function ConvaiAvatar4({ onLoad, ...props }) {
       }
     }
     fetchCharacterData()
-  }, [])
+  }, [visible])
 
   useEffect(() => {
     if (modelUrl && !error) {
@@ -566,6 +605,7 @@ export function ConvaiAvatar4({ onLoad, ...props }) {
         isPlaying={isTalking}
         currentAction={currentAction}
         onLoad={onLoad}
+        avatarType={avatarType}
         {...props} 
       />
     </Suspense>

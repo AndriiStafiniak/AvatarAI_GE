@@ -51,7 +51,6 @@ export default function ChatInterface({ characterId }) {
             const transcript = response.getUserQuery()
             if (transcript.getIsFinal()) {
               finalizedUserText.current += " " + transcript.getTextData()
-              console.log('Wiadomość użytkownika:', finalizedUserText.current.trim())
               setMessages(prev => [...prev, {
                 text: finalizedUserText.current.trim(),
                 sender: 'user'
@@ -71,7 +70,6 @@ export default function ChatInterface({ characterId }) {
               
               if (text) {
                 botResponseText.current += text + " "
-                console.log('Aktualny tekst bota:', botResponseText.current.trim())
               }
               if (audioData) {
                 botAudioData.current.push(audioData)
@@ -118,11 +116,9 @@ export default function ChatInterface({ characterId }) {
               setIsTyping(false)
               
               if (!response.hasUserQuery()) {
-                console.log('Finalna wiadomość bota:', botResponseText.current.trim())
                 setMessages(prev => {
                   const lastMessage = prev[prev.length - 1]
                   if (lastMessage && lastMessage.sender === 'bot') {
-                    // Aktualizujemy ostatnią wiadomość bota
                     const updatedMessages = [...prev]
                     updatedMessages[prev.length - 1] = {
                       text: botResponseText.current.trim(),
@@ -131,7 +127,6 @@ export default function ChatInterface({ characterId }) {
                     }
                     return updatedMessages
                   } else {
-                    // Tworzymy nową wiadomość bota
                     return [...prev, {
                       text: botResponseText.current.trim(),
                       sender: 'bot',
@@ -251,7 +246,6 @@ export default function ChatInterface({ characterId }) {
             const transcript = response.getUserQuery()
             if (transcript.getIsFinal()) {
               finalizedUserText.current += " " + transcript.getTextData()
-              console.log('Wiadomość użytkownika:', finalizedUserText.current.trim())
               setMessages(prev => [...prev, {
                 text: finalizedUserText.current.trim(),
                 sender: 'user'
@@ -271,7 +265,6 @@ export default function ChatInterface({ characterId }) {
               
               if (text) {
                 botResponseText.current += text + " "
-                console.log('Aktualny tekst bota:', botResponseText.current.trim())
               }
               if (audioData) {
                 botAudioData.current.push(audioData)
@@ -318,11 +311,9 @@ export default function ChatInterface({ characterId }) {
               setIsTyping(false)
               
               if (!response.hasUserQuery()) {
-                console.log('Finalna wiadomość bota:', botResponseText.current.trim())
                 setMessages(prev => {
                   const lastMessage = prev[prev.length - 1]
                   if (lastMessage && lastMessage.sender === 'bot') {
-                    // Aktualizujemy ostatnią wiadomość bota
                     const updatedMessages = [...prev]
                     updatedMessages[prev.length - 1] = {
                       text: botResponseText.current.trim(),
@@ -331,7 +322,6 @@ export default function ChatInterface({ characterId }) {
                     }
                     return updatedMessages
                   } else {
-                    // Tworzymy nową wiadomość bota
                     return [...prev, {
                       text: botResponseText.current.trim(),
                       sender: 'bot',
