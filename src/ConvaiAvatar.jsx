@@ -19,17 +19,21 @@ let activeAvatarType = 1;
 // Zmodyfikuj funkcję emitAvatarTypeChange
 const emitAvatarTypeChange = (type) => {
   activeAvatarType = type;
+  
+  // First hide current avatar and show loading
+  window.dispatchEvent(new CustomEvent('avatar-hide'));
   window.dispatchEvent(new CustomEvent('scene-loading-start'));
   
-  // Delay the avatar change until after loading starts
+  // After loading is shown, change avatar
   setTimeout(() => {
     window.dispatchEvent(new CustomEvent('avatar-type-change', { detail: type }));
     
-    // Add another small delay before ending loading
+    // After avatar is loaded, hide loading and show avatar
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent('scene-loading-end'));
+      window.dispatchEvent(new CustomEvent('avatar-show'));
     }, 500);
-  }, 100); // Small delay to ensure loading spinner appears first
+  }, 100);
 }
 
 const LoadingDots = () => {
@@ -153,36 +157,38 @@ function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
 
   const groupRef = useRef()
 
-  const [shouldLoad, setShouldLoad] = useState(true)
+  const [isVisible, setIsVisible] = useState(false)
   const [isSceneLoading, setIsSceneLoading] = useState(true)
 
-  // Add loading state handlers back for avatar switching
   useEffect(() => {
-    const handleLoadingStart = () => {
-      setIsSceneLoading(true);
-    };
-    
-    const handleLoadingEnd = () => {
-      setTimeout(() => {
-        setIsSceneLoading(false);
-      }, 500); // Short delay when ending loading
-    };
+    const handleHide = () => setIsVisible(false);
+    const handleShow = () => setIsVisible(true);
+    const handleLoadingStart = () => setIsSceneLoading(true);
+    const handleLoadingEnd = () => setIsSceneLoading(false);
 
+    window.addEventListener('avatar-hide', handleHide);
+    window.addEventListener('avatar-show', handleShow);
     window.addEventListener('scene-loading-start', handleLoadingStart);
     window.addEventListener('scene-loading-end', handleLoadingEnd);
 
     return () => {
+      window.removeEventListener('avatar-hide', handleHide);
+      window.removeEventListener('avatar-show', handleShow);
       window.removeEventListener('scene-loading-start', handleLoadingStart);
       window.removeEventListener('scene-loading-end', handleLoadingEnd);
     };
   }, []);
 
-  // Keep initial loading effect
+  // Initial loading
   useEffect(() => {
     setIsSceneLoading(true);
+    setIsVisible(false);
+    
     const timer = setTimeout(() => {
       setIsSceneLoading(false);
+      setIsVisible(true);
     }, 1000);
+    
     return () => clearTimeout(timer);
   }, []);
 
@@ -319,7 +325,7 @@ function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
   }
 
   return (
-    <group visible={visible} ref={groupRef}>
+    <group visible={visible && isVisible} ref={groupRef}>
       <primitive 
         object={clone} 
         {...props}
@@ -334,12 +340,14 @@ function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
 export function ConvaiAvatar({ onLoad, visible, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [error, setError] = useState(null)
-  const [shouldLoad, setShouldLoad] = useState(true)
+  const [shouldLoad, setShouldLoad] = useState(false)
   const [avatarType, setAvatarType] = useState(1)
 
   useEffect(() => {
-    setShouldLoad(true)
-  }, [])
+    if (visible) {
+      setShouldLoad(true)
+    }
+  }, [visible])
 
   useEffect(() => {
     if (!modelUrl) {
@@ -406,59 +414,49 @@ export function ConvaiAvatar({ onLoad, visible, ...props }) {
 
 export function ConvaiAvatar2({ onLoad, visible = false, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
-  const [isTalking, setIsTalking] = useState(false)
-  const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
-  const [shouldLoad, setShouldLoad] = useState(true)
+  const [shouldLoad, setShouldLoad] = useState(false)
   const [avatarType, setAvatarType] = useState(2)
 
   useEffect(() => {
-    const handleTalkingStart = () => setIsTalking(true)
-    const handleTalkingEnd = () => setIsTalking(false)
-
-    window.addEventListener('avatar-talking-start', handleTalkingStart)
-    window.addEventListener('avatar-talking-end', handleTalkingEnd)
-
-    return () => {
-      window.removeEventListener('avatar-talking-start', handleTalkingStart)
-      window.removeEventListener('avatar-talking-end', handleTalkingEnd)
+    if (visible) {
+      setShouldLoad(true)
     }
-  }, [])
-
-  useEffect(() => {
-    setShouldLoad(true)
-  }, [])
-
-  useEffect(() => {
-    async function fetchCharacterData() {
-      try {
-        const response = await fetch(CONVAI_API_URL, {
-          method: 'POST',
-          headers: {
-            'CONVAI-API-KEY': API_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ charID: AVATAR_ID_2 })
-        })
-
-        if (!response.ok) throw new Error('Failed to fetch character')
-        
-        const data = await response.json()
-        if (data?.model_details?.modelLink) {
-          setModelUrl(data.model_details.modelLink)
-          setAvatarType(2)
-          if (visible) {
-            emitAvatarTypeChange(2)
-          }
-        } else {
-          throw new Error('Invalid model URL')
-        }
-      } catch (error) {
-        setError(error)
-      }
-    }
-    fetchCharacterData()
   }, [visible])
+
+  useEffect(() => {
+    if (!modelUrl) {
+      async function fetchCharacterData() {
+        try {
+          const response = await fetch(CONVAI_API_URL, {
+            method: 'POST',
+            headers: {
+              'CONVAI-API-KEY': API_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ charID: AVATAR_ID_2 })
+          })
+
+          if (!response.ok) throw new Error('Failed to fetch character')
+          
+          const data = await response.json()
+          
+          if (data?.model_details?.modelLink) {
+            setModelUrl(data.model_details.modelLink)
+            setAvatarType(2)
+            if (visible) {
+              emitAvatarTypeChange(2)
+            }
+          } else {
+            throw new Error('Invalid model URL')
+          }
+        } catch (error) {
+          setError(error)
+        }
+      }
+      fetchCharacterData()
+    }
+  }, [modelUrl, visible])
 
   useEffect(() => {
     if (modelUrl && !error) {
@@ -480,9 +478,8 @@ export function ConvaiAvatar2({ onLoad, visible = false, ...props }) {
     <Suspense>
       <AvatarModel 
         modelUrl={modelUrl}
-        isPlaying={isTalking}
-        currentAction={currentAction}
         onLoad={onLoad}
+        visible={visible}
         avatarType={avatarType}
         {...props} 
       />
@@ -492,59 +489,49 @@ export function ConvaiAvatar2({ onLoad, visible = false, ...props }) {
 
 export function ConvaiAvatar3({ onLoad, visible = false, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
-  const [isTalking, setIsTalking] = useState(false)
-  const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
-  const [shouldLoad, setShouldLoad] = useState(true)
+  const [shouldLoad, setShouldLoad] = useState(false)
   const [avatarType, setAvatarType] = useState(3)
 
   useEffect(() => {
-    const handleTalkingStart = () => setIsTalking(true)
-    const handleTalkingEnd = () => setIsTalking(false)
-
-    window.addEventListener('avatar-talking-start', handleTalkingStart)
-    window.addEventListener('avatar-talking-end', handleTalkingEnd)
-
-    return () => {
-      window.removeEventListener('avatar-talking-start', handleTalkingStart)
-      window.removeEventListener('avatar-talking-end', handleTalkingEnd)
+    if (visible) {
+      setShouldLoad(true)
     }
-  }, [])
-
-  useEffect(() => {
-    setShouldLoad(true)
-  }, [])
-
-  useEffect(() => {
-    async function fetchCharacterData() {
-      try {
-        const response = await fetch(CONVAI_API_URL, {
-          method: 'POST',
-          headers: {
-            'CONVAI-API-KEY': API_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ charID: AVATAR_ID_3 })
-        })
-
-        if (!response.ok) throw new Error('Failed to fetch character')
-        
-        const data = await response.json()
-        if (data?.model_details?.modelLink) {
-          setModelUrl(data.model_details.modelLink)
-          setAvatarType(3)
-          if (visible) {
-            emitAvatarTypeChange(3)
-          }
-        } else {
-          throw new Error('Invalid model URL')
-        }
-      } catch (error) {
-        setError(error)
-      }
-    }
-    fetchCharacterData()
   }, [visible])
+
+  useEffect(() => {
+    if (!modelUrl) {
+      async function fetchCharacterData() {
+        try {
+          const response = await fetch(CONVAI_API_URL, {
+            method: 'POST',
+            headers: {
+              'CONVAI-API-KEY': API_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ charID: AVATAR_ID_3 })
+          })
+
+          if (!response.ok) throw new Error('Failed to fetch character')
+          
+          const data = await response.json()
+          
+          if (data?.model_details?.modelLink) {
+            setModelUrl(data.model_details.modelLink)
+            setAvatarType(3)
+            if (visible) {
+              emitAvatarTypeChange(3)
+            }
+          } else {
+            throw new Error('Invalid model URL')
+          }
+        } catch (error) {
+          setError(error)
+        }
+      }
+      fetchCharacterData()
+    }
+  }, [modelUrl, visible])
 
   useEffect(() => {
     if (modelUrl && !error) {
@@ -566,9 +553,8 @@ export function ConvaiAvatar3({ onLoad, visible = false, ...props }) {
     <Suspense>
       <AvatarModel 
         modelUrl={modelUrl}
-        isPlaying={isTalking}
-        currentAction={currentAction}
         onLoad={onLoad}
+        visible={visible}
         avatarType={avatarType}
         {...props} 
       />
@@ -578,59 +564,49 @@ export function ConvaiAvatar3({ onLoad, visible = false, ...props }) {
 
 export function ConvaiAvatar4({ onLoad, visible = false, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
-  const [isTalking, setIsTalking] = useState(false)
-  const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
-  const [shouldLoad, setShouldLoad] = useState(true)
+  const [shouldLoad, setShouldLoad] = useState(false)
   const [avatarType, setAvatarType] = useState(4)
 
   useEffect(() => {
-    const handleTalkingStart = () => setIsTalking(true)
-    const handleTalkingEnd = () => setIsTalking(false)
-
-    window.addEventListener('avatar-talking-start', handleTalkingStart)
-    window.addEventListener('avatar-talking-end', handleTalkingEnd)
-
-    return () => {
-      window.removeEventListener('avatar-talking-start', handleTalkingStart)
-      window.removeEventListener('avatar-talking-end', handleTalkingEnd)
+    if (visible) {
+      setShouldLoad(true)
     }
-  }, [])
-
-  useEffect(() => {
-    setShouldLoad(true)
-  }, [])
-
-  useEffect(() => {
-    async function fetchCharacterData() {
-      try {
-        const response = await fetch(CONVAI_API_URL, {
-          method: 'POST',
-          headers: {
-            'CONVAI-API-KEY': API_KEY,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ charID: AVATAR_ID_4 })
-        })
-
-        if (!response.ok) throw new Error('Failed to fetch character')
-        
-        const data = await response.json()
-        if (data?.model_details?.modelLink) {
-          setModelUrl(data.model_details.modelLink)
-          setAvatarType(4)
-          if (visible) {
-            emitAvatarTypeChange(4)
-          }
-        } else {
-          throw new Error('Invalid model URL')
-        }
-      } catch (error) {
-        setError(error)
-      }
-    }
-    fetchCharacterData()
   }, [visible])
+
+  useEffect(() => {
+    if (!modelUrl) {
+      async function fetchCharacterData() {
+        try {
+          const response = await fetch(CONVAI_API_URL, {
+            method: 'POST',
+            headers: {
+              'CONVAI-API-KEY': API_KEY,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ charID: AVATAR_ID_4 })
+          })
+
+          if (!response.ok) throw new Error('Failed to fetch character')
+          
+          const data = await response.json()
+          
+          if (data?.model_details?.modelLink) {
+            setModelUrl(data.model_details.modelLink)
+            setAvatarType(4)
+            if (visible) {
+              emitAvatarTypeChange(4)
+            }
+          } else {
+            throw new Error('Invalid model URL')
+          }
+        } catch (error) {
+          setError(error)
+        }
+      }
+      fetchCharacterData()
+    }
+  }, [modelUrl, visible])
 
   useEffect(() => {
     if (modelUrl && !error) {
@@ -652,9 +628,8 @@ export function ConvaiAvatar4({ onLoad, visible = false, ...props }) {
     <Suspense>
       <AvatarModel 
         modelUrl={modelUrl}
-        isPlaying={isTalking}
-        currentAction={currentAction}
         onLoad={onLoad}
+        visible={visible}
         avatarType={avatarType}
         {...props} 
       />

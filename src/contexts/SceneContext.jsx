@@ -1,28 +1,15 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 
 const SceneContext = createContext();
 
-export function SceneProvider({ children }) {
-  const [currentScene, setCurrentScene] = useState("TRANSFORMACJA ENERGETYCZNA");
+export const SceneProvider = ({ children }) => {
+  const [activeScene, setActiveScene] = useState(1);
   
-  useEffect(() => {
-  }, [currentScene]);
-
-  const setSceneWithLog = (newScene) => {
-    setCurrentScene(newScene);
-  };
-
   return (
-    <SceneContext.Provider value={{ 
-      currentScene, 
-      setCurrentScene: setSceneWithLog 
-    }}>
+    <SceneContext.Provider value={{ activeScene, setActiveScene }}>
       {children}
     </SceneContext.Provider>
   );
-}
+};
 
-export function useScene() {
-  const context = useContext(SceneContext);
-  return context;
-} 
+export const useScene = () => useContext(SceneContext); 

@@ -331,14 +331,14 @@ const App = () => {
   }
 
   return (
-    <div className="app-container" style={{ 
-      height: '100vh',
-      width: '100vw',
-      position: 'fixed',
-      top: 0,
-      left: 0 
-    }}>
-      <SceneProvider>
+    <SceneProvider>
+      <div className="app-container" style={{ 
+        height: '100vh',
+        width: '100vw',
+        position: 'fixed',
+        top: 0,
+        left: 0 
+      }}>
         <ConvaiContext.Provider value={{ currentAction, setCurrentAction }}>
           <div className="scene-container">
             {/* Nowy kontener z przyciskami */}
@@ -385,8 +385,8 @@ const App = () => {
             <SceneButtons />
           </div>
         </ConvaiContext.Provider>
-      </SceneProvider>
-    </div>
+      </div>
+    </SceneProvider>
   )
 }
 

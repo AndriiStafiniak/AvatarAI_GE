@@ -3,6 +3,7 @@ import Draggable from 'react-draggable'
 import './ChatInterface.css'
 import { MdSend, MdRefresh, MdExpandMore, MdExpandLess } from 'react-icons/md'
 import { ConvaiClient } from 'convai-web-sdk'
+import { useScene } from '../contexts/SceneContext'
 
 export default function ChatInterface({ characterId }) {
   const [messages, setMessages] = useState([])
@@ -19,6 +20,7 @@ export default function ChatInterface({ characterId }) {
   const botAudioData = useRef([])
 
   const [isExpanded, setIsExpanded] = useState(true)
+  const { setActiveScene } = useScene()
 
   useEffect(() => {
     let initializedClient = null
@@ -353,6 +355,10 @@ export default function ChatInterface({ characterId }) {
 
   const toggleExpand = () => {
     setIsExpanded(!isExpanded)
+  }
+
+  const handleSceneChange = (sceneNumber) => {
+    setActiveScene(sceneNumber)
   }
 
   return (
