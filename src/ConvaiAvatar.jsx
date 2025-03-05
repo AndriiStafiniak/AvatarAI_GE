@@ -20,11 +20,16 @@ let activeAvatarType = 1;
 const emitAvatarTypeChange = (type) => {
   activeAvatarType = type;
   window.dispatchEvent(new CustomEvent('scene-loading-start'));
-  // Add small delay for spinner visibility
+  
+  // Delay the avatar change until after loading starts
   setTimeout(() => {
     window.dispatchEvent(new CustomEvent('avatar-type-change', { detail: type }));
-    window.dispatchEvent(new CustomEvent('scene-loading-end'));
-  }, 500); // Shorter delay just for spinner visibility
+    
+    // Add another small delay before ending loading
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('scene-loading-end'));
+    }, 500);
+  }, 100); // Small delay to ensure loading spinner appears first
 }
 
 const LoadingDots = () => {
@@ -151,12 +156,33 @@ function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
   const [shouldLoad, setShouldLoad] = useState(true)
   const [isSceneLoading, setIsSceneLoading] = useState(true)
 
+  // Add loading state handlers back for avatar switching
   useEffect(() => {
-    // Add initial loading state
+    const handleLoadingStart = () => {
+      setIsSceneLoading(true);
+    };
+    
+    const handleLoadingEnd = () => {
+      setTimeout(() => {
+        setIsSceneLoading(false);
+      }, 500); // Short delay when ending loading
+    };
+
+    window.addEventListener('scene-loading-start', handleLoadingStart);
+    window.addEventListener('scene-loading-end', handleLoadingEnd);
+
+    return () => {
+      window.removeEventListener('scene-loading-start', handleLoadingStart);
+      window.removeEventListener('scene-loading-end', handleLoadingEnd);
+    };
+  }, []);
+
+  // Keep initial loading effect
+  useEffect(() => {
     setIsSceneLoading(true);
     const timer = setTimeout(() => {
       setIsSceneLoading(false);
-    }, 1000); // Short delay for spinner visibility
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
 
