@@ -18,18 +18,13 @@ let activeAvatarType = 1;
 
 // Zmodyfikuj funkcję emitAvatarTypeChange
 const emitAvatarTypeChange = (type) => {
-  console.log('Emitting avatar type change:', type);
   activeAvatarType = type;
-  
-  // Emit loading start
   window.dispatchEvent(new CustomEvent('scene-loading-start'));
-  
-  // Add delay before changing avatar
+  // Add small delay for spinner visibility
   setTimeout(() => {
     window.dispatchEvent(new CustomEvent('avatar-type-change', { detail: type }));
-    // Emit loading end
     window.dispatchEvent(new CustomEvent('scene-loading-end'));
-  }, 2000);
+  }, 500); // Shorter delay just for spinner visibility
 }
 
 const LoadingDots = () => {
@@ -153,21 +148,17 @@ function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
 
   const groupRef = useRef()
 
-  const [shouldLoad, setShouldLoad] = useState(false)
-  const [isSceneLoading, setIsSceneLoading] = useState(false)
+  const [shouldLoad, setShouldLoad] = useState(true)
+  const [isSceneLoading, setIsSceneLoading] = useState(true)
 
   useEffect(() => {
+    // Add initial loading state
+    setIsSceneLoading(true);
     const timer = setTimeout(() => {
-      setShouldLoad(true)
-    }, 3500)
-    return () => clearTimeout(timer)
-  }, [])
-
-  useEffect(() => {
-    return () => {
-      // Dodatkowy cleanup jeśli potrzebny
-    }
-  }, [])
+      setIsSceneLoading(false);
+    }, 1000); // Short delay for spinner visibility
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     useGLTF.preload('/models/avatar1.glb')
@@ -289,33 +280,9 @@ function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
 
   useEffect(() => {
     if (avatarType && visible) {
-      console.log('AvatarModel received avatarType:', avatarType, 'visible:', visible);
       emitAvatarTypeChange(avatarType);
     }
   }, [avatarType, visible]);
-
-  // Add loading state handlers
-  useEffect(() => {
-    const handleLoadingStart = () => {
-      setIsSceneLoading(true);
-    };
-    
-    const handleLoadingEnd = () => {
-      setIsSceneLoading(false);
-    };
-
-    window.addEventListener('scene-loading-start', handleLoadingStart);
-    window.addEventListener('scene-loading-end', handleLoadingEnd);
-
-    return () => {
-      window.removeEventListener('scene-loading-start', handleLoadingStart);
-      window.removeEventListener('scene-loading-end', handleLoadingEnd);
-    };
-  }, []);
-
-  if (!shouldLoad) {
-    return null;
-  }
 
   if (isSceneLoading) {
     return (
@@ -341,12 +308,11 @@ function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
 export function ConvaiAvatar({ onLoad, visible, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [error, setError] = useState(null)
-  const [shouldLoad, setShouldLoad] = useState(false)
+  const [shouldLoad, setShouldLoad] = useState(true)
   const [avatarType, setAvatarType] = useState(1)
 
   useEffect(() => {
-    const timer = setTimeout(() => setShouldLoad(true), 3500)
-    return () => clearTimeout(timer)
+    setShouldLoad(true)
   }, [])
 
   useEffect(() => {
@@ -417,7 +383,7 @@ export function ConvaiAvatar2({ onLoad, visible = false, ...props }) {
   const [isTalking, setIsTalking] = useState(false)
   const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
-  const [shouldLoad, setShouldLoad] = useState(false)
+  const [shouldLoad, setShouldLoad] = useState(true)
   const [avatarType, setAvatarType] = useState(2)
 
   useEffect(() => {
@@ -434,8 +400,7 @@ export function ConvaiAvatar2({ onLoad, visible = false, ...props }) {
   }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => setShouldLoad(true), 3500)
-    return () => clearTimeout(timer)
+    setShouldLoad(true)
   }, [])
 
   useEffect(() => {
@@ -504,7 +469,7 @@ export function ConvaiAvatar3({ onLoad, visible = false, ...props }) {
   const [isTalking, setIsTalking] = useState(false)
   const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
-  const [shouldLoad, setShouldLoad] = useState(false)
+  const [shouldLoad, setShouldLoad] = useState(true)
   const [avatarType, setAvatarType] = useState(3)
 
   useEffect(() => {
@@ -521,8 +486,7 @@ export function ConvaiAvatar3({ onLoad, visible = false, ...props }) {
   }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => setShouldLoad(true), 3500)
-    return () => clearTimeout(timer)
+    setShouldLoad(true)
   }, [])
 
   useEffect(() => {
@@ -591,7 +555,7 @@ export function ConvaiAvatar4({ onLoad, visible = false, ...props }) {
   const [isTalking, setIsTalking] = useState(false)
   const [currentAction, setCurrentAction] = useState('')
   const [error, setError] = useState(null)
-  const [shouldLoad, setShouldLoad] = useState(false)
+  const [shouldLoad, setShouldLoad] = useState(true)
   const [avatarType, setAvatarType] = useState(4)
 
   useEffect(() => {
@@ -608,8 +572,7 @@ export function ConvaiAvatar4({ onLoad, visible = false, ...props }) {
   }, [])
 
   useEffect(() => {
-    const timer = setTimeout(() => setShouldLoad(true), 3500)
-    return () => clearTimeout(timer)
+    setShouldLoad(true)
   }, [])
 
   useEffect(() => {

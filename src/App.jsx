@@ -364,7 +364,7 @@ const App = () => {
 
             {!isAvatarLoaded && (
               <div className="loading-overlay">
-                <LoadingSpinner progress={70} />
+                <LoadingSpinner progress={100} />
               </div>
             )}
             <Scene3DErrorBoundary>
