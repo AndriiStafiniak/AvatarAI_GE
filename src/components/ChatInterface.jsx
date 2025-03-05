@@ -84,8 +84,8 @@ export default function ChatInterface({ characterId }) {
                 
                 const framesPerSecond = 60
                 const totalFrames = Math.ceil(audioLengthSeconds * framesPerSecond)
-                const cycleLength = 0.6
-                const pauseLength = 0.1 // 0.1s pauzy między cyklami
+                const cycleLength = 0.8
+                const pauseLength = 0.3 // 0.1s pauzy między cyklami
                 const fullCycleLength = cycleLength + pauseLength
                 const framesPerFullCycle = Math.ceil(fullCycleLength * framesPerSecond)
                 const framesPerCycle = Math.ceil(cycleLength * framesPerSecond)

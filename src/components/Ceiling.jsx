@@ -107,8 +107,8 @@ export default function Ceiling() {
         {useMemo(() => {
           const lights = []
           const spacing = 2
-          const rows = 1
-          const cols = 1
+          const rows = 2
+          const cols = 2
 
           for (let x = -cols/2; x <= cols/2; x++) {
             for (let z = -rows/2; z <= rows/2; z++) {
@@ -119,11 +119,11 @@ export default function Ceiling() {
                 >
                   <boxGeometry args={[3.5, 0.1, 1.2]} />
                   <meshStandardMaterial 
-                    color={currentColor}
-                    emissive={currentColor}
+                    color={'#ffffff'}
+                    emissive={'#ffffff'}
                     emissiveIntensity={1.5}
-                    metalness={currentMaterialParams.metalness}
-                    roughness={currentMaterialParams.roughness}
+                    metalness={1}
+                    roughness={0.8}
                     envMapIntensity={currentMaterialParams.envMapIntensity}
                   />
                 </mesh>
