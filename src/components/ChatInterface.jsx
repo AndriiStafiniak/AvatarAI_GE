@@ -13,167 +13,153 @@ export default function ChatInterface({ characterId, setActiveScene }) {
   const nodeRef = useRef(null)
   
   const convaiClient = useRef(null)
-  const finalizedUserText = useRef("")
-  const npcTextRef = useRef("")
-  const botResponseText = useRef("")
-  const botAudioData = useRef([])
-
+  const userTextStream = useRef("")
+  const npcTextStream = useRef("")
+  const keyPressed = useRef(false)
   const [isExpanded, setIsExpanded] = useState(true)
 
+  // Clear chat when character changes
   useEffect(() => {
-    let initializedClient = null
+    setMessages([])
+    setInputMessage('')
+    setIsTyping(false)
+    userTextStream.current = ""
+    npcTextStream.current = ""
     
-    const initClient = async () => {
-      try {
-        initializedClient = new ConvaiClient({
-          apiKey: '2d12bd421e3af7ce47223bce45944908',
-          characterId: characterId,
-          enableAudio: true,
-          enableVisemes: true,
-          enableLipSync: true,
-          visemeFrameRate: 100,
-          visemeMapping: {
-            0: 'mouthOpen',
-            1: 'mouthSmile'
-          },
-          sessionId: '-1',
-          disableAudioGeneration: false
-        })
-        
-        if (initializedClient.audioContext) {
-          await initializedClient.audioContext.resume()
-        }
-        
-        convaiClient.current = initializedClient
-
-        convaiClient.current.setResponseCallback((response) => {
-          if (response.hasUserQuery()) {
-            const transcript = response.getUserQuery()
-            if (transcript.getIsFinal()) {
-              finalizedUserText.current += " " + transcript.getTextData()
-              setMessages(prev => [...prev, {
-                text: finalizedUserText.current.trim(),
-                sender: 'user'
-              }])
-              finalizedUserText.current = ""
-              botResponseText.current = ""
-              botAudioData.current = []
-            }
-          }
-          
-          if (response.hasAudioResponse()) {
-            const audioResponse = response.getAudioResponse()
-            
-            try {
-              const text = audioResponse.array?.[2]
-              const audioData = audioResponse.array?.[0]
-              
-              if (text) {
-                botResponseText.current += text + " "
-              }
-              if (audioData) {
-                botAudioData.current.push(audioData)
-              }
-              
-              if (text && audioData) {
-                window.visemeData = []
-                window.visemeDataActive = false
-                
-                const totalAudioLength = botAudioData.current.reduce((acc, curr) => acc + curr.length, 0)
-                const audioLengthSeconds = totalAudioLength / 22050
-                
-                const framesPerSecond = 60
-                const totalFrames = Math.ceil(audioLengthSeconds * framesPerSecond)
-                const cycleLength = 0.8
-                const pauseLength = 0.3 // 0.1s pauzy między cyklami
-                const fullCycleLength = cycleLength + pauseLength
-                const framesPerFullCycle = Math.ceil(fullCycleLength * framesPerSecond)
-                const framesPerCycle = Math.ceil(cycleLength * framesPerSecond)
-                const framesPerPause = Math.ceil(pauseLength * framesPerSecond)
-                
-                const frames = []
-                
-                for (let i = 0; i < totalFrames; i++) {
-                  const cyclePosition = (i % framesPerFullCycle)
-                  
-                  if (cyclePosition < framesPerCycle) {
-                    // Podczas aktywnej części cyklu - usta się ruszają
-                    const activePosition = cyclePosition / framesPerCycle
-                    const openAmount = Math.sin(activePosition * Math.PI) * 0.7
-                    frames.push([Math.max(0, openAmount), 0])
-                  } else {
-                    // Podczas pauzy - usta zamknięte
-                    frames.push([0, 0])
-                  }
-                }
-                
-                window.visemeData = frames
-                window.visemeDataActive = true
-                window.dispatchEvent(new Event('viseme-data-update'))
-              }
-
-              npcTextRef.current = botResponseText.current.trim()
-              setIsTyping(false)
-              
-              if (!response.hasUserQuery()) {
-                setMessages(prev => {
-                  const lastMessage = prev[prev.length - 1]
-                  if (lastMessage && lastMessage.sender === 'bot') {
-                    const updatedMessages = [...prev]
-                    updatedMessages[prev.length - 1] = {
-                      text: botResponseText.current.trim(),
-                      sender: 'bot',
-                      audio: botAudioData.current
-                    }
-                    return updatedMessages
-                  } else {
-                    return [...prev, {
-                      text: botResponseText.current.trim(),
-                      sender: 'bot',
-                      audio: botAudioData.current
-                    }]
-                  }
-                })
-              }
-            } catch (error) {
-              console.error('Błąd przetwarzania wiadomości:', error)
-            }
-          }
-        })
-
-        convaiClient.current.onAudioPlay(() => {
-          window.dispatchEvent(new Event('avatar-talking-start'))
-        })
-
-        convaiClient.current.onAudioStop(() => {
-          window.dispatchEvent(new Event('avatar-talking-end'))
-        })
-      } catch (error) {
-        console.error('[Chat] Init error:', error)
+    // Cleanup old client
+    if (convaiClient.current) {
+      if (typeof convaiClient.current.destroy === 'function') {
+        convaiClient.current.destroy()
+      } else if (typeof convaiClient.current.close === 'function') {
+        convaiClient.current.close()
       }
+      convaiClient.current = null
     }
 
+    // Initialize new client for the new character
     initClient()
-    return () => {
-      if (initializedClient) {
-        if (typeof initializedClient.destroy === 'function') {
-          initializedClient.destroy()
-        } else if (typeof initializedClient.close === 'function') {
-          initializedClient.close()
-        }
-      }
-    }
   }, [characterId])
 
-  useEffect(() => {
-    const clearVisemeData = () => {
-      window.visemeData = []
-      window.visemeDataActive = false
+  // Initialize Convai client
+  const initClient = async () => {
+    try {
+      const client = new ConvaiClient({
+        apiKey: '2d12bd421e3af7ce47223bce45944908',
+        characterId: characterId,
+        enableAudio: true,
+        faceModal: 3,
+        enableFacialData: true,
+      })
+
+      // Error callback
+      client.setErrorCallback((type, statusMessage) => {
+        console.error("Convai Error:", type, statusMessage)
+        setIsTyping(false) // Reset typing indicator on error
+      })
+
+      // Response callback
+      client.setResponseCallback((response) => {
+        // Handle user query
+        if (response.hasUserQuery()) {
+          const transcript = response.getUserQuery()
+          if (transcript?.getIsFinal()) {
+            userTextStream.current += " " + transcript.getTextData()
+            setMessages(prev => [...prev, {
+              text: userTextStream.current.trim(),
+              sender: 'user'
+            }])
+            userTextStream.current = ""
+          }
+        }
+
+        // Handle audio response
+        if (response.hasAudioResponse()) {
+          const audioResponse = response.getAudioResponse()
+          npcTextStream.current += " " + audioResponse.getTextData()
+
+          // Handle viseme data
+          if (audioResponse.hasVisemesData()) {
+            const lipsyncData = audioResponse.getVisemesData().array[0]
+            if (lipsyncData[0] !== -2) {
+              window.visemeData = window.visemeData || []
+              window.visemeData.push(lipsyncData)
+              window.visemeDataActive = true
+              window.dispatchEvent(new Event('viseme-data-update'))
+            }
+          }
+
+          setMessages(prev => {
+            const lastMessage = prev[prev.length - 1]
+            if (lastMessage?.sender === 'bot') {
+              const updatedMessages = [...prev]
+              updatedMessages[prev.length - 1] = {
+                text: npcTextStream.current.trim(),
+                sender: 'bot'
+              }
+              return updatedMessages
+            }
+            return [...prev, {
+              text: npcTextStream.current.trim(),
+              sender: 'bot'
+            }]
+          })
+          
+          // Reset typing indicator when we get a response
+          setIsTyping(false)
+        }
+      })
+
+      // Audio callbacks
+      client.onAudioPlay(() => {
+        window.dispatchEvent(new Event('avatar-talking-start'))
+      })
+
+      client.onAudioStop(() => {
+        window.dispatchEvent(new Event('avatar-talking-end'))
+        npcTextStream.current = ""
+        // Reset viseme data when audio stops
+        window.visemeData = []
+        window.visemeDataActive = false
+        window.dispatchEvent(new Event('viseme-data-update'))
+        setIsTyping(false) // Ensure typing indicator is removed
+      })
+
+      convaiClient.current = client
+
+      // Setup key listeners for voice input
+      const handleKeyDown = (e) => {
+        if (e.keyCode === 84 && !keyPressed.current) { // 'T' key
+          e.preventDefault()
+          keyPressed.current = true
+          userTextStream.current = ""
+          npcTextStream.current = ""
+          client.startAudioChunk()
+        }
+      }
+
+      const handleKeyUp = (e) => {
+        if (e.keyCode === 84 && keyPressed.current) {
+          e.preventDefault()
+          keyPressed.current = false
+          setTimeout(() => {
+            client.endAudioChunk()
+          }, 500)
+        }
+      }
+
+      window.addEventListener('keydown', handleKeyDown)
+      window.addEventListener('keyup', handleKeyUp)
+
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown)
+        window.removeEventListener('keyup', handleKeyUp)
+      }
+
+    } catch (error) {
+      console.error('Convai initialization error:', error)
+      setIsTyping(false) // Reset typing indicator on error
     }
-    
-    window.addEventListener('avatar-talking-end', clearVisemeData)
-    return () => window.removeEventListener('avatar-talking-end', clearVisemeData)
-  }, [])
+  }
 
   const sendTextMessage = async (e) => {
     e?.preventDefault()
@@ -245,14 +231,12 @@ export default function ChatInterface({ characterId, setActiveScene }) {
           if (response.hasUserQuery()) {
             const transcript = response.getUserQuery()
             if (transcript.getIsFinal()) {
-              finalizedUserText.current += " " + transcript.getTextData()
+              userTextStream.current += " " + transcript.getTextData()
               setMessages(prev => [...prev, {
-                text: finalizedUserText.current.trim(),
+                text: userTextStream.current.trim(),
                 sender: 'user'
               }])
-              finalizedUserText.current = ""
-              botResponseText.current = ""
-              botAudioData.current = []
+              userTextStream.current = ""
             }
           }
           
@@ -264,72 +248,36 @@ export default function ChatInterface({ characterId, setActiveScene }) {
               const audioData = audioResponse.array?.[0]
               
               if (text) {
-                botResponseText.current += text + " "
+                npcTextStream.current += text + " "
               }
               if (audioData) {
-                botAudioData.current.push(audioData)
-              }
-              
-              if (text && audioData) {
-                window.visemeData = []
-                window.visemeDataActive = false
-                
-                const totalAudioLength = botAudioData.current.reduce((acc, curr) => acc + curr.length, 0)
-                const audioLengthSeconds = totalAudioLength / 22050
-                
-                const framesPerSecond = 60
-                const totalFrames = Math.ceil(audioLengthSeconds * framesPerSecond)
-                const cycleLength = 0.9
-                const pauseLength = 0.3 // 0.1s pauzy między cyklami
-                const fullCycleLength = cycleLength + pauseLength
-                const framesPerFullCycle = Math.ceil(fullCycleLength * framesPerSecond)
-                const framesPerCycle = Math.ceil(cycleLength * framesPerSecond)
-                const framesPerPause = Math.ceil(pauseLength * framesPerSecond)
-                
-                const frames = []
-                
-                for (let i = 0; i < totalFrames; i++) {
-                  const cyclePosition = (i % framesPerFullCycle)
-                  
-                  if (cyclePosition < framesPerCycle) {
-                    // Podczas aktywnej części cyklu - usta się ruszają
-                    const activePosition = cyclePosition / framesPerCycle
-                    const openAmount = Math.sin(activePosition * Math.PI) * 0.7
-                    frames.push([Math.max(0, openAmount), 0])
-                  } else {
-                    // Podczas pauzy - usta zamknięte
-                    frames.push([0, 0])
+                // Handle viseme data
+                if (audioResponse.hasVisemesData()) {
+                  const lipsyncData = audioResponse.getVisemesData().array[0]
+                  if (lipsyncData[0] !== -2) {
+                    window.visemeData = window.visemeData || []
+                    window.visemeData.push(lipsyncData)
+                    window.visemeDataActive = true
+                    window.dispatchEvent(new Event('viseme-data-update'))
                   }
                 }
-                
-                window.visemeData = frames
-                window.visemeDataActive = true
-                window.dispatchEvent(new Event('viseme-data-update'))
               }
 
-              npcTextRef.current = botResponseText.current.trim()
-              setIsTyping(false)
-              
-              if (!response.hasUserQuery()) {
-                setMessages(prev => {
-                  const lastMessage = prev[prev.length - 1]
-                  if (lastMessage && lastMessage.sender === 'bot') {
-                    const updatedMessages = [...prev]
-                    updatedMessages[prev.length - 1] = {
-                      text: botResponseText.current.trim(),
-                      sender: 'bot',
-                      audio: botAudioData.current
-                    }
-                    return updatedMessages
-                  } else {
-                    return [...prev, {
-                      text: botResponseText.current.trim(),
-                      sender: 'bot',
-                      audio: botAudioData.current
-                    }]
+              setMessages(prev => {
+                const lastMessage = prev[prev.length - 1]
+                if (lastMessage?.sender === 'bot') {
+                  const updatedMessages = [...prev]
+                  updatedMessages[prev.length - 1] = {
+                    text: npcTextStream.current.trim(),
+                    sender: 'bot'
                   }
-                })
-              }
+                  return updatedMessages
+                }
+                return [...prev, {
+                  text: npcTextStream.current.trim(),
+                  sender: 'bot'
+                }]
+              })
             } catch (error) {
               console.error('Błąd przetwarzania wiadomości:', error)
             }
@@ -342,6 +290,7 @@ export default function ChatInterface({ characterId, setActiveScene }) {
 
         convaiClient.current.onAudioStop(() => {
           window.dispatchEvent(new Event('avatar-talking-end'))
+          npcTextStream.current = ""
         })
       } catch (error) {
         console.error('Init error:', error)
