@@ -108,6 +108,8 @@ const Scene = ({
   avatars,
   visibleAvatar
 }) => {
+  const { activeScene } = useScene();
+
   return (
     <Canvas 
       shadows 
@@ -199,15 +201,34 @@ const Scene = ({
               />
               <Floor />
               <Ceiling />
-              <Tv />
-              <Zegar />
+              {activeScene === 1 && (
+                <>
+                  <Tv />
+                  <Zegar />
+                </>
+              )}
+              {activeScene === 2 && (
+                <>
+                  <Chair />
+                  <CoffeeTable />
+                </>
+              )}
+              {activeScene === 3 && (
+                <>
+                  <Vase />
+                  <Zegar />
+                </>
+              )}
+              {activeScene === 4 && (
+                <>
+                  <Tv />
+                  <CoffeeTable />
+                </>
+              )}
               <Sign 
                 position={[0, 3.5, -4.9]} 
                 scale={1.2} 
               />
-              <CoffeeTable />
-              <Vase/>
-              <Chair />
               <Wall
                 name="Left Wall"
                 initialPosition={[-5, 2, 0]}
@@ -238,11 +259,11 @@ const Scene = ({
 
 // Nowy komponent dla przycisków awatara
 function AvatarButtons({ selectedAvatar, isLoading, handleAvatarChange }) {
-  const { setCurrentScene } = useScene();
+  const { setActiveScene } = useScene();
   
   const handleAvatarClick = (num) => {
     handleAvatarChange(num);
-    setCurrentScene(LABELS[num]); // Aktualizujemy scenę przy zmianie awatara
+    setActiveScene(num);
   };
   
   return [1, 2, 3, 4].map((num) => (
@@ -392,22 +413,22 @@ const App = () => {
 
 // Nowy komponent dla przycisków sceny
 function SceneButtons() {
-  const { setCurrentScene } = useScene();
+  const { setActiveScene } = useScene();
   
   return (
     <div className="scene-buttons">
-      <button onClick={() => setCurrentScene(LABELS[1])}>
+      <button onClick={() => setActiveScene(1)}>
         Transformacja Energetyczna
       </button>
-      <button onClick={() => setCurrentScene(LABELS[2])}>
+      <button onClick={() => setActiveScene(2)}>
         Hub Energetyczny
       </button>
-      <button onClick={() => setCurrentScene(LABELS[3])}>
+      <button onClick={() => setActiveScene(3)}>
         POPRAWA EFEKTYWNOŚCI OZE
       </button>
       <button onClick={() => {
         const randomText = "TEST " + Math.floor(Math.random() * 1000);
-        setCurrentScene(randomText);
+        setActiveScene(randomText);
       }}>
         Test Losowego Tekstu
       </button>
