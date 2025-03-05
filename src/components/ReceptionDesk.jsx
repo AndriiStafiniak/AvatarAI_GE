@@ -12,7 +12,7 @@ export default function ReceptionDesk({ currentAction, position, rotation, scale
 
   useEffect(() => {
     const handleAvatarTypeChange = (event) => {
-      console.log('Reception desk received avatar type change:', event.detail);
+      // console.log('Reception desk received avatar type change:', event.detail);
       setTimeout(() => {
         setCurrentAvatarType(event.detail);
       }, 100);
@@ -34,7 +34,7 @@ export default function ReceptionDesk({ currentAction, position, rotation, scale
       4: new THREE.Color('#CD7F32')  // brązowy dla czwartego
     }
 
-    console.log('Reception desk applying color for avatar type:', currentAvatarType);
+    // console.log('Reception desk applying color for avatar type:', currentAvatarType);
     const color = colors[currentAvatarType] || colors[1]
 
     // Zmień kolor tylko dla wybranego elementu (np. "Cube008")
@@ -42,7 +42,7 @@ export default function ReceptionDesk({ currentAction, position, rotation, scale
       if (child.isMesh && child.name === "Cube008") { // Możesz zmienić nazwę na właściwą
         if (child.material) {
           child.material = child.material.clone()
-          console.log('Applying color to mesh:', child.name, 'Color:', color);
+          // console.log('Applying color to mesh:', child.name, 'Color:', color);
           child.material.color.copy(color)
           if (currentAvatarType > 1) {
             child.material.metalness = 0.8

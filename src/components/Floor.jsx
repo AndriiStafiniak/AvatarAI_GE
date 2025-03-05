@@ -8,7 +8,7 @@ export default function Floor({ ...props }) {
   // Nasłuchuj zmiany typu awatara
   useEffect(() => {
     const handleAvatarTypeChange = (event) => {
-      console.log('Floor received avatar type change:', event.detail);
+      // console.log('Floor received avatar type change:', event.detail);
       setTimeout(() => {
         setCurrentAvatarType(event.detail);
       }, 100);

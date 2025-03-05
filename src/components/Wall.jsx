@@ -16,7 +16,7 @@ export default function Wall({ name, initialPosition = [0, 0, 0], initialSize = 
   // Nasłuchuj zmiany typu awatara
   useEffect(() => {
     const handleAvatarTypeChange = (event) => {
-      console.log('Wall received avatar type change:', event.detail);
+      // console.log('Wall received avatar type change:', event.detail);
       setTimeout(() => {
         setCurrentAvatarType(event.detail);
       }, 100);

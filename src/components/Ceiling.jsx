@@ -7,7 +7,7 @@ export default function Ceiling() {
   // Nasłuchuj zmiany typu awatara
   useEffect(() => {
     const handleAvatarTypeChange = (event) => {
-      console.log('Ceiling received avatar type change:', event.detail);
+      // console.log('Ceiling received avatar type change:', event.detail);
       setTimeout(() => {
         setCurrentAvatarType(event.detail);
       }, 100);
