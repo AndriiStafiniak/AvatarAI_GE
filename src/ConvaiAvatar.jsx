@@ -1,5 +1,5 @@
 import React, { useEffect, useState, Suspense, useRef, useMemo } from 'react'
-import { useGLTF } from '@react-three/drei'
+import { useGLTF, Html } from '@react-three/drei'
 import { SkeletonUtils } from 'three-stdlib'
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 import * as THREE from 'three'
@@ -19,9 +19,42 @@ let activeAvatarType = 1;
 // Zmodyfikuj funkcję emitAvatarTypeChange
 const emitAvatarTypeChange = (type) => {
   console.log('Emitting avatar type change:', type);
-  activeAvatarType = type; // Zapisz aktywny typ
-  window.dispatchEvent(new CustomEvent('avatar-type-change', { detail: type }));
+  activeAvatarType = type;
+  
+  // Emit loading start
+  window.dispatchEvent(new CustomEvent('scene-loading-start'));
+  
+  // Add delay before changing avatar
+  setTimeout(() => {
+    window.dispatchEvent(new CustomEvent('avatar-type-change', { detail: type }));
+    // Emit loading end
+    window.dispatchEvent(new CustomEvent('scene-loading-end'));
+  }, 2000);
 }
+
+const LoadingDots = () => {
+  const [dots, setDots] = useState('');
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? '' : prev + '.');
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  return dots;
+};
+
+const LoadingSpinner = () => {
+  return (
+    <Html center>
+      <div className="loading-spinner">
+        <div className="spinner"></div>
+        <div className="loading-text">Loading{LoadingDots()}</div>
+      </div>
+    </Html>
+  );
+};
 
 function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
   const { scene } = useGLTF(modelUrl)
@@ -121,6 +154,7 @@ function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
   const groupRef = useRef()
 
   const [shouldLoad, setShouldLoad] = useState(false)
+  const [isSceneLoading, setIsSceneLoading] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -260,8 +294,35 @@ function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
     }
   }, [avatarType, visible]);
 
+  // Add loading state handlers
+  useEffect(() => {
+    const handleLoadingStart = () => {
+      setIsSceneLoading(true);
+    };
+    
+    const handleLoadingEnd = () => {
+      setIsSceneLoading(false);
+    };
+
+    window.addEventListener('scene-loading-start', handleLoadingStart);
+    window.addEventListener('scene-loading-end', handleLoadingEnd);
+
+    return () => {
+      window.removeEventListener('scene-loading-start', handleLoadingStart);
+      window.removeEventListener('scene-loading-end', handleLoadingEnd);
+    };
+  }, []);
+
   if (!shouldLoad) {
-    return null
+    return null;
+  }
+
+  if (isSceneLoading) {
+    return (
+      <group visible={visible}>
+        <LoadingSpinner />
+      </group>
+    );
   }
 
   return (
