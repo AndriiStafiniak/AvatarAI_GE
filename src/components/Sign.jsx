@@ -2,11 +2,15 @@ import { Text } from '@react-three/drei'
 import { useControls } from 'leva'
 import * as THREE from 'three'
 import React, { useEffect } from 'react'
-import { useScene } from '../contexts/SceneContext'
 
-export default function Sign() {
-  const { currentScene } = useScene()
-  
+const LABELS = {
+  1: 'TRANSFORMACJA ENERGETYCZNA FIRM',
+  2: 'HUB ENERGETYCZNY I WODOROWY',
+  3: 'POPRAWA EFEKTYWNOŚCI OZE', 
+  4: 'CZYSTE POWIETRZE'
+}
+
+export default function Sign({ activeScene }) {
   const { position, scale, color } = useControls('Sign', {
     position: { value: [0, 3.5, -4.8], step: 0.1 },
     scale: { value: 1, min: 0.5, max: 3 },
@@ -14,11 +18,12 @@ export default function Sign() {
   })
 
   React.useLayoutEffect(() => {
-  }, [currentScene]);
+    // Możesz dodać logikę zależną od activeScene
+  }, [activeScene]);
 
   return (
     <Text
-      key={`text-${currentScene}`}
+      key={`text-${activeScene}`}
       position={position}
       rotation={[Math.PI, Math.PI, Math.PI]}
       fontSize={0.4}
@@ -27,7 +32,7 @@ export default function Sign() {
       anchorY="middle"
       scale={scale}
     >
-      {currentScene}
+      {LABELS[activeScene] || `Scena ${activeScene}`}
     </Text>
   )
 } 

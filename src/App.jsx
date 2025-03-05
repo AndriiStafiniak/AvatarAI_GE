@@ -2,9 +2,6 @@ import React, { Suspense, useState, Component, useCallback, useEffect } from 're
 import { Canvas } from '@react-three/fiber'
 import { Environment, PresentationControls, OrbitControls } from '@react-three/drei'
 import { Leva, useControls } from 'leva'
-import { ConvaiContext } from './contexts/ConvaiContext'
-import  LoadingSpinner  from './components/LoadingSpinner'
-// Importujemy komponenty bezpośrednio zamiast lazy loading
 import { ConvaiAvatar } from './ConvaiAvatar'
 import { ConvaiAvatar2 } from './ConvaiAvatar'
 import { ConvaiAvatar3 } from './ConvaiAvatar'
@@ -19,12 +16,12 @@ import Vase from './components/Vase'
 import './App.css'
 import  Chair  from './components/Chair'
 import CoffeeTable from './components/CoffeeTable'
+import LoadingSpinner from './components/LoadingSpinner'
 
 import { Physics } from '@react-three/cannon'
 import Ceiling  from './components/Ceiling'
 import { useCylinder } from '@react-three/cannon'
 import Sign from './components/Sign'
-import { SceneProvider, useScene } from './contexts/SceneContext'
 
 
 const AVATAR_IDS = {
@@ -99,6 +96,7 @@ const AvatarWithPhysics = ({ children, onLoad, position, rotation }) => {
 
 // Modyfikacja komponentu Scene, aby używał kontekstu
 const Scene = ({ 
+  activeScene,
   isAvatarLoaded, 
   onAvatarLoaded, 
   currentAction, 
@@ -108,8 +106,6 @@ const Scene = ({
   avatars,
   visibleAvatar
 }) => {
-  const { activeScene } = useScene();
-
   return (
     <Canvas 
       shadows 
@@ -227,7 +223,8 @@ const Scene = ({
               )}
               <Sign 
                 position={[0, 3.5, -4.9]} 
-                scale={1.2} 
+                scale={1.2}
+                activeScene={activeScene}
               />
               <Wall
                 name="Left Wall"
@@ -258,13 +255,11 @@ const Scene = ({
 }
 
 // Nowy komponent dla przycisków awatara
-function AvatarButtons({ selectedAvatar, isLoading, handleAvatarChange }) {
-  const { setActiveScene } = useScene();
-  
+function AvatarButtons({ selectedAvatar, isLoading, handleAvatarChange, setActiveScene }) {
   const handleAvatarClick = (num) => {
-    handleAvatarChange(num);
-    setActiveScene(num);
-  };
+    handleAvatarChange(num)
+    setActiveScene(num)
+  }
   
   return [1, 2, 3, 4].map((num) => (
     <button
@@ -291,6 +286,7 @@ function AvatarButtons({ selectedAvatar, isLoading, handleAvatarChange }) {
 
 const App = () => {
   const [currentAction, setCurrentAction] = useState('')
+  const [activeScene, setActiveScene] = useState(1)
   const [isAvatarLoaded, setIsAvatarLoaded] = useState(false)
   const [selectedAvatar, setSelectedAvatar] = useState(1)
   const [isLoading, setIsLoading] = useState(false)
@@ -303,6 +299,7 @@ const App = () => {
     setIsAvatarLoaded(false)
     setSelectedAvatar(avatarNumber)
     setVisibleAvatar(avatarNumber)
+    setActiveScene(avatarNumber)
     
     if (avatars[avatarNumber]) {
       setIsAvatarLoaded(true)
@@ -352,69 +349,64 @@ const App = () => {
   }
 
   return (
-    <SceneProvider>
-      <div className="app-container" style={{ 
-        height: '100vh',
-        width: '100vw',
-        position: 'fixed',
-        top: 0,
-        left: 0 
-      }}>
-        <ConvaiContext.Provider value={{ currentAction, setCurrentAction }}>
-          <div className="scene-container">
-            {/* Nowy kontener z przyciskami */}
-            <div style={{
-              position: 'absolute',
-              bottom: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 1000,
-              display: 'flex',
-              gap: '10px',
-              padding: '10px',
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              borderRadius: '8px',
-              backdropFilter: 'blur(4px)'
-            }}>
-              <AvatarButtons 
-                selectedAvatar={selectedAvatar} 
-                isLoading={isLoading} 
-                handleAvatarChange={handleAvatarChange} 
-              />
-            </div>
+    <div className="app-container" style={{ 
+      height: '100vh',
+      width: '100vw',
+      position: 'fixed',
+      top: 0,
+      left: 0 
+    }}>
+      <div className="scene-container">
+        <div style={{
+          position: 'absolute',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          display: 'flex',
+          gap: '10px',
+          padding: '10px',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          borderRadius: '8px',
+          backdropFilter: 'blur(4px)'
+        }}>
+          <AvatarButtons 
+            selectedAvatar={selectedAvatar} 
+            isLoading={isLoading} 
+            handleAvatarChange={handleAvatarChange}
+            setActiveScene={setActiveScene}
+          />
+        </div>
 
-            {!isAvatarLoaded && (
-              <div className="loading-overlay">
-                <LoadingSpinner progress={100} />
-              </div>
-            )}
-            <Scene3DErrorBoundary>
-              <Scene 
-                key={`scene-${forceUpdate}`}
-                isAvatarLoaded={isAvatarLoaded}
-                onAvatarLoaded={() => setIsAvatarLoaded(true)}
-                currentAction={currentAction}
-                selectedAvatar={selectedAvatar}
-                isLoading={isLoading}
-                forceUpdate={forceUpdate}
-                avatars={avatars}
-                visibleAvatar={visibleAvatar}
-              />
-            </Scene3DErrorBoundary>
-            {isAvatarLoaded && <ChatInterface characterId={AVATAR_IDS[selectedAvatar]} />}
-
-            <SceneButtons />
+        {!isAvatarLoaded && (
+          <div className="loading-overlay">
+            <LoadingSpinner progress={100} />
           </div>
-        </ConvaiContext.Provider>
+        )}
+        <Scene3DErrorBoundary>
+          <Scene 
+            key={`scene-${forceUpdate}`}
+            activeScene={activeScene}
+            isAvatarLoaded={isAvatarLoaded}
+            onAvatarLoaded={() => setIsAvatarLoaded(true)}
+            currentAction={currentAction}
+            selectedAvatar={selectedAvatar}
+            isLoading={isLoading}
+            forceUpdate={forceUpdate}
+            avatars={avatars}
+            visibleAvatar={visibleAvatar}
+          />
+        </Scene3DErrorBoundary>
+        {isAvatarLoaded && <ChatInterface characterId={AVATAR_IDS[selectedAvatar]} setActiveScene={setActiveScene} />}
+
+        <SceneButtons setActiveScene={setActiveScene} />
       </div>
-    </SceneProvider>
+    </div>
   )
 }
 
 // Nowy komponent dla przycisków sceny
-function SceneButtons() {
-  const { setActiveScene } = useScene();
-  
+function SceneButtons({ setActiveScene }) {
   return (
     <div className="scene-buttons">
       <button onClick={() => setActiveScene(1)}>
