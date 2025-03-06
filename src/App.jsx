@@ -120,7 +120,7 @@ const Scene = ({
         camera.lookAt(0, 0, 0)
       }}
     >
-      <OrbitControls />
+      {/* <OrbitControls /> */}
       <Physics gravity={[0, -9.81, 0]}>
         <Leva hidden={true} />
         <Environment 
