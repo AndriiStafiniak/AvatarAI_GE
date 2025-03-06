@@ -68,7 +68,6 @@ export default function ChatInterface({ characterId, setActiveScene }) {
           const transcript = response.getUserQuery()
           if (transcript) {
             userTextStream.current += " " + transcript.getTextData()
-            setUserSpeechText(userTextStream.current.trim())
             
             if (transcript.getIsFinal()) {
               setMessages(prev => [...prev, {
@@ -76,7 +75,6 @@ export default function ChatInterface({ characterId, setActiveScene }) {
                 sender: 'user'
               }])
               userTextStream.current = ""
-              setUserSpeechText('')
             }
           }
         }
@@ -298,14 +296,12 @@ export default function ChatInterface({ characterId, setActiveScene }) {
 
       if (!isRecording) {
         setMicError('')
-        setUserSpeechText('Mów teraz...')
         setIsRecording(true)
         userTextStream.current = ""
         npcTextStream.current = ""
         convaiClient.current.startAudioChunk()
       } else {
         setIsRecording(false)
-        setUserSpeechText('')
         setTimeout(() => {
           convaiClient.current.endAudioChunk()
         }, 500)
@@ -371,9 +367,9 @@ export default function ChatInterface({ characterId, setActiveScene }) {
                   </div>
                 </div>
               )}
-              {userSpeechText && (
+              {isRecording && (
                 <div className="message user speech-preview">
-                  {userSpeechText}
+                  Mów teraz...
                   <div className="voice-wave"></div>
                 </div>
               )}
