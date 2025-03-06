@@ -1,8 +1,8 @@
 # AvatarAI
 
-[![AvatarAI](./readme_img.png)](https://avatar-ai-gray.vercel.app/)
+[![AvatarAI](./readme_img.png)](https://avatar-ai-green-hub.vercel.app/)
 
-[Live Demo](https://avatar-ai-gray.vercel.app/)
+[Live Demo](https://avatar-ai-green-hub.vercel.app/)
 
 ## About
 
