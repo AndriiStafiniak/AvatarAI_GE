@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import Draggable from 'react-draggable'
 import './ChatInterface.css'
-import { MdSend, MdRefresh, MdExpandMore, MdExpandLess } from 'react-icons/md'
+import { MdSend, MdRefresh, MdExpandMore, MdExpandLess, MdMic, MdMicOff } from 'react-icons/md'
 import { ConvaiClient } from 'convai-web-sdk'
 
 export default function ChatInterface({ characterId, setActiveScene }) {
@@ -17,6 +17,7 @@ export default function ChatInterface({ characterId, setActiveScene }) {
   const npcTextStream = useRef("")
   const keyPressed = useRef(false)
   const [isExpanded, setIsExpanded] = useState(true)
+  const [isRecording, setIsRecording] = useState(false)
 
   // Clear chat when character changes
   useEffect(() => {
@@ -126,33 +127,8 @@ export default function ChatInterface({ characterId, setActiveScene }) {
 
       convaiClient.current = client
 
-      // Setup key listeners for voice input
-      const handleKeyDown = (e) => {
-        if (e.keyCode === 84 && !keyPressed.current) { // 'T' key
-          e.preventDefault()
-          keyPressed.current = true
-          userTextStream.current = ""
-          npcTextStream.current = ""
-          client.startAudioChunk()
-        }
-      }
-
-      const handleKeyUp = (e) => {
-        if (e.keyCode === 84 && keyPressed.current) {
-          e.preventDefault()
-          keyPressed.current = false
-          setTimeout(() => {
-            client.endAudioChunk()
-          }, 500)
-        }
-      }
-
-      window.addEventListener('keydown', handleKeyDown)
-      window.addEventListener('keyup', handleKeyUp)
-
       return () => {
-        window.removeEventListener('keydown', handleKeyDown)
-        window.removeEventListener('keyup', handleKeyUp)
+        // Cleanup event listeners
       }
 
     } catch (error) {
@@ -304,6 +280,22 @@ export default function ChatInterface({ characterId, setActiveScene }) {
     setIsExpanded(!isExpanded)
   }
 
+  const handleMicrophoneClick = () => {
+    if (!convaiClient.current) return
+    
+    if (!isRecording) {
+      setIsRecording(true)
+      userTextStream.current = ""
+      npcTextStream.current = ""
+      convaiClient.current.startAudioChunk()
+    } else {
+      setIsRecording(false)
+      setTimeout(() => {
+        convaiClient.current.endAudioChunk()
+      }, 500)
+    }
+  }
+
   return (
     <Draggable 
       nodeRef={nodeRef} 
@@ -362,6 +354,14 @@ export default function ChatInterface({ characterId, setActiveScene }) {
             </div>
             <div className="chat-controls">
               <form onSubmit={sendTextMessage} className="chat-input-form">
+                <button 
+                  type="button" 
+                  className={`mic-button ${isRecording ? 'recording' : ''}`}
+                  onClick={handleMicrophoneClick}
+                  title={isRecording ? "Zatrzymaj nagrywanie" : "Rozpocznij nagrywanie"}
+                >
+                  {isRecording ? <MdMicOff /> : <MdMic />}
+                </button>
                 <input
                   type="text"
                   value={inputMessage}

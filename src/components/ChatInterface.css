@@ -87,7 +87,9 @@
 .chat-input-form {
   flex-grow: 1;
   display: flex;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
 }
 
 .chat-input {
@@ -206,29 +208,15 @@
   padding: 8px;
   cursor: pointer;
   color: #666;
-  transition: all 0.3s;
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 40px;
-  height: 40px;
-  margin-right: 5px;
-}
-
-.mic-button:hover {
-  color: #3498db;
-  transform: scale(1.1);
+  transition: color 0.3s ease;
 }
 
 .mic-button.recording {
-  animation: pulse 1.5s infinite;
+  color: #ff4444;
 }
 
-@keyframes pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+.mic-button:hover {
+  color: #007bff;
 }
 
 .mic-error {
