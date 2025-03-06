@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import Draggable from 'react-draggable'
 import './ChatInterface.css'
-import { MdSend, MdRefresh, MdExpandMore, MdExpandLess, MdMic, MdMicOff } from 'react-icons/md'
+import { MdSend, MdRefresh, MdExpandMore, MdExpandLess, MdMic, MdMicOff, MdKeyboardVoice, MdVoiceOverOff } from 'react-icons/md'
 import { ConvaiClient } from 'convai-web-sdk'
 
 export default function ChatInterface({ characterId, setActiveScene }) {
@@ -18,6 +18,9 @@ export default function ChatInterface({ characterId, setActiveScene }) {
   const keyPressed = useRef(false)
   const [isExpanded, setIsExpanded] = useState(true)
   const [isRecording, setIsRecording] = useState(false)
+  const [isMicPermissionGranted, setIsMicPermissionGranted] = useState(false)
+  const [micError, setMicError] = useState('')
+  const [userSpeechText, setUserSpeechText] = useState('')
 
   // Clear chat when character changes
   useEffect(() => {
@@ -63,13 +66,18 @@ export default function ChatInterface({ characterId, setActiveScene }) {
         // Handle user query
         if (response.hasUserQuery()) {
           const transcript = response.getUserQuery()
-          if (transcript?.getIsFinal()) {
+          if (transcript) {
             userTextStream.current += " " + transcript.getTextData()
-            setMessages(prev => [...prev, {
-              text: userTextStream.current.trim(),
-              sender: 'user'
-            }])
-            userTextStream.current = ""
+            setUserSpeechText(userTextStream.current.trim())
+            
+            if (transcript.getIsFinal()) {
+              setMessages(prev => [...prev, {
+                text: userTextStream.current.trim(),
+                sender: 'user'
+              }])
+              userTextStream.current = ""
+              setUserSpeechText('')
+            }
           }
         }
 
@@ -280,19 +288,32 @@ export default function ChatInterface({ characterId, setActiveScene }) {
     setIsExpanded(!isExpanded)
   }
 
-  const handleMicrophoneClick = () => {
-    if (!convaiClient.current) return
-    
-    if (!isRecording) {
-      setIsRecording(true)
-      userTextStream.current = ""
-      npcTextStream.current = ""
-      convaiClient.current.startAudioChunk()
-    } else {
+  const handleMicrophoneClick = async () => {
+    try {
+      if (!isMicPermissionGranted) {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        stream.getTracks().forEach(track => track.stop())
+        setIsMicPermissionGranted(true)
+      }
+
+      if (!isRecording) {
+        setMicError('')
+        setUserSpeechText('Mów teraz...')
+        setIsRecording(true)
+        userTextStream.current = ""
+        npcTextStream.current = ""
+        convaiClient.current.startAudioChunk()
+      } else {
+        setIsRecording(false)
+        setUserSpeechText('')
+        setTimeout(() => {
+          convaiClient.current.endAudioChunk()
+        }, 500)
+      }
+    } catch (error) {
+      setMicError('Brak dostępu do mikrofonu! Kliknij ikonę kłódki w pasku przeglądarki i zezwól na dostęp.')
       setIsRecording(false)
-      setTimeout(() => {
-        convaiClient.current.endAudioChunk()
-      }, 500)
+      setIsMicPermissionGranted(false)
     }
   }
 
@@ -347,6 +368,20 @@ export default function ChatInterface({ characterId, setActiveScene }) {
                     <span></span>
                     <span></span>
                     <span></span>
+                  </div>
+                </div>
+              )}
+              {userSpeechText && (
+                <div className="message user speech-preview">
+                  {userSpeechText}
+                  <div className="voice-wave"></div>
+                </div>
+              )}
+              {micError && (
+                <div className="message error">
+                  <div className="mic-error-message">
+                    {micError}
+                    <div className="mic-error-icon">🎤❌</div>
                   </div>
                 </div>
               )}
