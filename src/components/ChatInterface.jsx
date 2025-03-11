@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import Draggable from 'react-draggable'
 import './ChatInterface.css'
-import { MdSend, MdRefresh, MdExpandMore, MdExpandLess, MdMic, MdMicOff, MdKeyboardVoice, MdVoiceOverOff } from 'react-icons/md'
+import { MdSend, MdRefresh, MdExpandMore, MdExpandLess, MdMic, MdMicOff, MdKeyboardVoice, MdVoiceOverOff, MdSpeed } from 'react-icons/md'
 import { ConvaiClient } from 'convai-web-sdk'
 import { AVATAR_IDS } from '../App'
 
@@ -24,20 +24,53 @@ export default function ChatInterface({ characterId, setActiveScene }) {
   const [userSpeechText, setUserSpeechText] = useState('')
   const [autoGreetingDone, setAutoGreetingDone] = useState(false)
   const [clientReady, setClientReady] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [fastResponseMode, setFastResponseMode] = useState(false)
   
   // Dodajemy system kolejkowania audio
   const audioQueue = useRef([])
   const isPlayingAudio = useRef(false)
   const audioCollectionTimeout = useRef(null)
   const pendingAudioSegments = useRef([])
+  const responseStartTime = useRef(null)
+
+  // Funkcja pomocnicza do wyświetlania przyjaznych komunikatów błędów
+  const handleError = (error, context) => {
+    console.error(`Error in ${context}:`, error)
+    let userMessage = 'Przepraszamy, wystąpił nieoczekiwany błąd. Spróbuj ponownie.'
+
+    if (error.message?.includes('permission')) {
+      userMessage = 'Brak dostępu do mikrofonu! Kliknij ikonę kłódki w pasku przeglądarki i zezwól na dostęp.'
+    } else if (error.message?.includes('network')) {
+      userMessage = 'Problem z połączeniem internetowym. Sprawdź swoje połączenie i spróbuj ponownie.'
+    } else if (error.message?.includes('audio')) {
+      userMessage = 'Problem z systemem audio. Sprawdź czy Twój mikrofon działa poprawnie.'
+    }
+
+    setErrorMessage(userMessage)
+    setMessages(prev => [...prev, {
+      text: userMessage,
+      sender: 'error',
+      timestamp: new Date().toISOString()
+    }])
+    
+    // Automatycznie ukryj błąd po 5 sekundach
+    setTimeout(() => {
+      setErrorMessage('')
+    }, 5000)
+  }
 
   // Funkcja do odtwarzania kolejnego audio z kolejki
   const playNextAudio = () => {
-    console.log('Próba odtworzenia kolejnego audio, kolejka:', audioQueue.current.length)
-    
     if (audioQueue.current.length === 0) {
       isPlayingAudio.current = false
-      console.log('Kolejka audio pusta, zatrzymuję odtwarzanie')
+      return
+    }
+    
+    // Jeśli włączony tryb szybkiej odpowiedzi, pomijamy odtwarzanie audio
+    if (fastResponseMode) {
+      audioQueue.current = []
+      isPlayingAudio.current = false
       return
     }
     
@@ -45,11 +78,9 @@ export default function ChatInterface({ characterId, setActiveScene }) {
     const nextAudio = audioQueue.current.shift()
     
     try {
-      console.log('Odtwarzam audio z kolejki')
       if (convaiClient.current && typeof convaiClient.current.playAudio === 'function') {
         convaiClient.current.playAudio(nextAudio)
       } else {
-        console.error('Metoda playAudio niedostępna w kliencie Convai')
         playNextAudio()
       }
     } catch (error) {
@@ -60,7 +91,6 @@ export default function ChatInterface({ characterId, setActiveScene }) {
 
   const processAudioSegments = () => {
     if (pendingAudioSegments.current.length > 0) {
-      console.log('Przetwarzanie zebranych segmentów audio:', pendingAudioSegments.current.length)
       audioQueue.current.push(...pendingAudioSegments.current)
       pendingAudioSegments.current = []
       
@@ -107,14 +137,14 @@ export default function ChatInterface({ characterId, setActiveScene }) {
         enableFacialData: true,
       })
 
-      // Error callback
       client.setErrorCallback((type, statusMessage) => {
-        console.error("Convai Error:", {
+        const errorContext = {
           type,
           statusMessage,
           timestamp: new Date().toISOString()
-        })
-        setIsTyping(false) // Reset typing indicator on error
+        }
+        handleError(new Error(statusMessage), 'Convai Client')
+        setIsTyping(false)
       })
 
       // Response callback
@@ -124,7 +154,6 @@ export default function ChatInterface({ characterId, setActiveScene }) {
           const transcript = response.getUserQuery()
           if (transcript) {
             userTextStream.current += " " + transcript.getTextData()
-            console.log('User Query:', transcript.getTextData())
             
             if (transcript.getIsFinal()) {
               setMessages(prev => [...prev, {
@@ -132,6 +161,9 @@ export default function ChatInterface({ characterId, setActiveScene }) {
                 sender: 'user'
               }])
               userTextStream.current = ""
+              
+              // Rozpoczynamy pomiar czasu odpowiedzi
+              responseStartTime.current = Date.now()
             }
           }
         }
@@ -139,13 +171,41 @@ export default function ChatInterface({ characterId, setActiveScene }) {
         // Handle audio response
         if (response.hasAudioResponse()) {
           const audioResponse = response.getAudioResponse()
-          npcTextStream.current += " " + audioResponse.getTextData()
-          console.log('Bot Response:', audioResponse.getTextData())
-          console.log('Full Response Object:', audioResponse)
+          const newText = audioResponse.getTextData()
+          
+          if (newText && newText.trim()) {
+            npcTextStream.current += " " + newText
+            
+            // Aktualizujemy wiadomość bota natychmiast, nie czekając na audio
+            setMessages(prev => {
+              const lastMessage = prev[prev.length - 1]
+              if (lastMessage?.sender === 'bot') {
+                const updatedMessages = [...prev]
+                updatedMessages[prev.length - 1] = {
+                  text: npcTextStream.current.trim(),
+                  sender: 'bot'
+                }
+                return updatedMessages
+              }
+              return [...prev, {
+                text: npcTextStream.current.trim(),
+                sender: 'bot'
+              }]
+            })
+            
+            // Jeśli to pierwsza odpowiedź, zatrzymujemy wskaźnik pisania
+            setIsTyping(false)
+            
+            // Mierzymy czas odpowiedzi
+            if (responseStartTime.current) {
+              const responseTime = Date.now() - responseStartTime.current
+              console.log(`Czas odpowiedzi: ${responseTime}ms`)
+              responseStartTime.current = null
+            }
+          }
 
           // Zbieramy segmenty audio
           if (audioResponse.array && audioResponse.array[0]) {
-            console.log('Dodaję segment audio do kolekcji')
             pendingAudioSegments.current.push(audioResponse.array[0])
             
             // Resetujemy timer za każdym razem gdy otrzymamy nowy segment
@@ -153,10 +213,10 @@ export default function ChatInterface({ characterId, setActiveScene }) {
               clearTimeout(audioCollectionTimeout.current)
             }
             
-            // Ustawiamy timer na przetworzenie zebranych segmentów
+            // Ustawiamy timer na przetworzenie zebranych segmentów - zmniejszamy opóźnienie
             audioCollectionTimeout.current = setTimeout(() => {
               processAudioSegments()
-            }, 500) // Czekamy 500ms na kolejne segmenty
+            }, fastResponseMode ? 50 : 200) // Zmniejszamy czas oczekiwania
           }
 
           // Handle viseme data
@@ -169,25 +229,6 @@ export default function ChatInterface({ characterId, setActiveScene }) {
               window.dispatchEvent(new Event('viseme-data-update'))
             }
           }
-
-          setMessages(prev => {
-            const lastMessage = prev[prev.length - 1]
-            if (lastMessage?.sender === 'bot') {
-              const updatedMessages = [...prev]
-              updatedMessages[prev.length - 1] = {
-                text: npcTextStream.current.trim(),
-                sender: 'bot'
-              }
-              console.log('Updated Bot Message:', npcTextStream.current.trim())
-              return updatedMessages
-            }
-            return [...prev, {
-              text: npcTextStream.current.trim(),
-              sender: 'bot'
-            }]
-          })
-          
-          setIsTyping(false)
         }
       })
 
@@ -198,22 +239,10 @@ export default function ChatInterface({ characterId, setActiveScene }) {
 
       client.onAudioStop(() => {
         window.dispatchEvent(new Event('avatar-talking-end'))
-        
-        // Po zakończeniu odtwarzania audio, odtwórz następne z kolejki
-        console.log('Audio zakończone, sprawdzam kolejkę')
+        // Po zakończeniu odtwarzania audio, odtwarzamy następne z kolejki
         setTimeout(() => {
           playNextAudio()
-        }, 100) // Małe opóźnienie dla stabilności
-        
-        // Tylko gdy kolejka jest pusta, resetujemy tekst
-        if (audioQueue.current.length === 0) {
-          npcTextStream.current = ""
-          // Reset viseme data when audio stops
-          window.visemeData = []
-          window.visemeDataActive = false
-          window.dispatchEvent(new Event('viseme-data-update'))
-          setIsTyping(false) // Ensure typing indicator is removed
-        }
+        }, 50) // Zmniejszamy opóźnienie między segmentami audio
       })
 
       convaiClient.current = client
@@ -229,15 +258,9 @@ export default function ChatInterface({ characterId, setActiveScene }) {
       // Oznaczamy, że klient jest gotowy
       setClientReady(true)
 
-      return () => {
-        if (audioCollectionTimeout.current) {
-          clearTimeout(audioCollectionTimeout.current)
-        }
-      }
-
     } catch (error) {
-      console.error('Convai initialization error:', error)
-      setIsTyping(false) // Reset typing indicator on error
+      handleError(error, 'Client Initialization')
+      setIsTyping(false)
       setClientReady(false)
     }
   }
@@ -248,16 +271,24 @@ export default function ChatInterface({ characterId, setActiveScene }) {
 
     setIsTyping(true)
     
-    setMessages(prev => [...prev, {
-      text: inputMessage,
-      sender: 'user'
-    }])
-    
     try {
+      setMessages(prev => [...prev, {
+        text: inputMessage,
+        sender: 'user'
+      }])
+      
+      if (!convaiClient.current) {
+        throw new Error('Połączenie z awatarem nie zostało ustanowione. Odśwież stronę i spróbuj ponownie.')
+      }
+      
+      // Rozpoczynamy pomiar czasu odpowiedzi
+      responseStartTime.current = Date.now()
+      
+      // Wysyłamy wiadomość z priorytetem dla tekstu
       await convaiClient.current.sendTextChunk(inputMessage)
       setInputMessage('')
     } catch (error) {
-      console.error('Error sending text:', error)
+      handleError(error, 'Send Text Message')
       setIsTyping(false)
     }
   }
@@ -274,139 +305,28 @@ export default function ChatInterface({ characterId, setActiveScene }) {
     setMessages([])
     setInputMessage('')
     setIsTyping(false)
+    userTextStream.current = ""
+    npcTextStream.current = ""
     
     // Czyszczenie kolejki audio
     audioQueue.current = []
     isPlayingAudio.current = false
     
-    if (convaiClient.current) {
-      if (typeof convaiClient.current.destroy === 'function') {
-        convaiClient.current.destroy()
-      } else if (typeof convaiClient.current.close === 'function') {
-        convaiClient.current.close()
-      }
-      convaiClient.current = null
-    }
-    
-    const initClient = async () => {
-      try {
-        const initializedClient = new ConvaiClient({
-          apiKey: '2d12bd421e3af7ce47223bce45944908',
-          characterId: characterId,
-          enableAudio: true,
-          enableVisemes: true,
-          enableLipSync: true,
-          visemeFrameRate: 100,
-          visemeMapping: {
-            0: 'mouthOpen',
-            1: 'mouthSmile'
-          },
-          sessionId: '-1',
-          disableAudioGeneration: false
-        })
-        
-        if (initializedClient.audioContext) {
-          await new Promise(resolve => setTimeout(resolve, 10))
-          await initializedClient.audioContext.resume()
+    try {
+      // Reinicjalizacja klienta
+      if (convaiClient.current) {
+        if (typeof convaiClient.current.destroy === 'function') {
+          convaiClient.current.destroy()
+        } else if (typeof convaiClient.current.close === 'function') {
+          convaiClient.current.close()
         }
-        
-        convaiClient.current = initializedClient
-
-        convaiClient.current.setResponseCallback((response) => {
-          if (response.hasUserQuery()) {
-            const transcript = response.getUserQuery()
-            if (transcript.getIsFinal()) {
-              userTextStream.current += " " + transcript.getTextData()
-              setMessages(prev => [...prev, {
-                text: userTextStream.current.trim(),
-                sender: 'user'
-              }])
-              userTextStream.current = ""
-            }
-          }
-          
-          if (response.hasAudioResponse()) {
-            const audioResponse = response.getAudioResponse()
-            
-            try {
-              const text = audioResponse.array?.[2]
-              const audioData = audioResponse.array?.[0]
-              
-              if (text) {
-                npcTextStream.current += text + " "
-              }
-              
-              // Dodajemy audio do kolejki zamiast natychmiastowego odtwarzania
-              if (audioData) {
-                console.log('Dodaję audio do kolejki (refresh)')
-                audioQueue.current.push(audioData)
-                
-                // Jeśli nie odtwarzamy obecnie audio, rozpocznij odtwarzanie
-                if (!isPlayingAudio.current) {
-                  playNextAudio()
-                }
-                
-                // Handle viseme data
-                if (audioResponse.hasVisemesData()) {
-                  const lipsyncData = audioResponse.getVisemesData().array[0]
-                  if (lipsyncData[0] !== -2) {
-                    window.visemeData = window.visemeData || []
-                    window.visemeData.push(lipsyncData)
-                    window.visemeDataActive = true
-                    window.dispatchEvent(new Event('viseme-data-update'))
-                  }
-                }
-              }
-
-              setMessages(prev => {
-                const lastMessage = prev[prev.length - 1]
-                if (lastMessage?.sender === 'bot') {
-                  const updatedMessages = [...prev]
-                  updatedMessages[prev.length - 1] = {
-                    text: npcTextStream.current.trim(),
-                    sender: 'bot'
-                  }
-                  return updatedMessages
-                }
-                return [...prev, {
-                  text: npcTextStream.current.trim(),
-                  sender: 'bot'
-                }]
-              })
-            } catch (error) {
-              console.error('Błąd przetwarzania wiadomości:', error)
-            }
-          }
-        })
-
-        convaiClient.current.onAudioPlay(() => {
-          window.dispatchEvent(new Event('avatar-talking-start'))
-        })
-
-        convaiClient.current.onAudioStop(() => {
-          window.dispatchEvent(new Event('avatar-talking-end'))
-          
-          // Po zakończeniu odtwarzania audio, odtwórz następne z kolejki
-          console.log('Audio zakończone, sprawdzam kolejkę (refresh)')
-          setTimeout(() => {
-            playNextAudio()
-          }, 100) // Małe opóźnienie dla stabilności
-          
-          // Tylko gdy kolejka jest pusta, resetujemy tekst
-          if (audioQueue.current.length === 0) {
-            npcTextStream.current = ""
-            // Reset viseme data when audio stops
-            window.visemeData = []
-            window.visemeDataActive = false
-            window.dispatchEvent(new Event('viseme-data-update'))
-          }
-        })
-      } catch (error) {
-        console.error('Init error:', error)
+        convaiClient.current = null
       }
+      
+      await initClient()
+    } catch (error) {
+      handleError(error, 'Refresh')
     }
-    
-    await initClient()
   }
 
   const toggleExpand = () => {
@@ -422,19 +342,29 @@ export default function ChatInterface({ characterId, setActiveScene }) {
       }
 
       if (!isRecording) {
+        if (!convaiClient.current) {
+          throw new Error('Połączenie z awatarem nie zostało ustanowione. Odśwież stronę i spróbuj ponownie.')
+        }
+        
         setMicError('')
         setIsRecording(true)
         userTextStream.current = ""
         npcTextStream.current = ""
+        
+        // Rozpoczynamy pomiar czasu odpowiedzi
+        responseStartTime.current = Date.now()
+        
         convaiClient.current.startAudioChunk()
       } else {
         setIsRecording(false)
         setTimeout(() => {
-          convaiClient.current.endAudioChunk()
-        }, 500)
+          if (convaiClient.current) {
+            convaiClient.current.endAudioChunk()
+          }
+        }, 100) // Zmniejszamy opóźnienie
       }
     } catch (error) {
-      setMicError('Brak dostępu do mikrofonu! Kliknij ikonę kłódki w pasku przeglądarki i zezwól na dostęp.')
+      handleError(error, 'Microphone Access')
       setIsRecording(false)
       setIsMicPermissionGranted(false)
     }
@@ -450,19 +380,30 @@ export default function ChatInterface({ characterId, setActiveScene }) {
           await convaiClient.current.sendTextChunk("Przywitaj się i przedstaw się kim jesteś")
           setAutoGreetingDone(true)
         } catch (error) {
-          console.error('Error sending greeting:', error)
+          handleError(error, 'Automatic Greeting')
           setIsTyping(false)
         }
       }
     }
 
-    // Opóźniamy przywitanie o 2 sekundy, aby dać czas na załadowanie awatara
+    // Opóźniamy przywitanie o 1 sekundę, aby dać czas na załadowanie awatara
     const timer = setTimeout(() => {
       sendGreeting()
-    }, 2000)
+    }, 1000) // Zmniejszamy opóźnienie
 
     return () => clearTimeout(timer)
   }, [autoGreetingDone, characterId, clientReady])
+
+  // Funkcja przełączająca tryb szybkiej odpowiedzi
+  const toggleFastResponseMode = () => {
+    setFastResponseMode(!fastResponseMode)
+    
+    // Jeśli włączamy tryb szybkiej odpowiedzi, czyścimy kolejkę audio
+    if (!fastResponseMode) {
+      audioQueue.current = []
+      isPlayingAudio.current = false
+    }
+  }
 
   return (
     <Draggable 
@@ -478,6 +419,13 @@ export default function ChatInterface({ characterId, setActiveScene }) {
         <div className="chat-header">
           <span>Chat</span>
           <div className="header-controls">
+            <button 
+              className={`fast-response-button ${fastResponseMode ? 'active' : ''}`}
+              onClick={toggleFastResponseMode}
+              title={fastResponseMode ? "Wyłącz tryb szybkiej odpowiedzi" : "Włącz tryb szybkiej odpowiedzi"}
+            >
+              <MdSpeed />
+            </button>
             <button 
               className="refresh-button" 
               onClick={handleRefresh}
@@ -504,7 +452,7 @@ export default function ChatInterface({ characterId, setActiveScene }) {
               {messages.map((msg, index) => (
                 <div 
                   key={index} 
-                  className={`message ${msg.sender} ${msg.error ? 'error' : ''}`}
+                  className={`message ${msg.sender} ${msg.sender === 'error' ? 'error-message' : ''}`}
                 >
                   {msg.text}
                 </div>
@@ -524,12 +472,9 @@ export default function ChatInterface({ characterId, setActiveScene }) {
                   <div className="voice-wave"></div>
                 </div>
               )}
-              {micError && (
-                <div className="message error">
-                  <div className="mic-error-message">
-                    {micError}
-                    <div className="mic-error-icon">🎤❌</div>
-                  </div>
+              {errorMessage && (
+                <div className="message error-message fade-out">
+                  {errorMessage}
                 </div>
               )}
               <div ref={messagesEndRef} />
@@ -538,9 +483,10 @@ export default function ChatInterface({ characterId, setActiveScene }) {
               <form onSubmit={sendTextMessage} className="chat-input-form">
                 <button 
                   type="button" 
-                  className={`mic-button ${isRecording ? 'recording' : ''}`}
+                  className={`mic-button ${isRecording ? 'recording' : ''} ${errorMessage ? 'error' : ''}`}
                   onClick={handleMicrophoneClick}
                   title={isRecording ? "Zatrzymaj nagrywanie" : "Rozpocznij nagrywanie"}
+                  disabled={!!errorMessage}
                 >
                   {isRecording ? <MdMicOff /> : <MdMic />}
                 </button>
@@ -550,8 +496,14 @@ export default function ChatInterface({ characterId, setActiveScene }) {
                   onChange={(e) => setInputMessage(e.target.value)}
                   placeholder="Napisz wiadomość..."
                   className="chat-input"
+                  disabled={!!errorMessage}
                 />
-                <button type="submit" className="chat-send-button" title="Wyślij">
+                <button 
+                  type="submit" 
+                  className="chat-send-button" 
+                  title="Wyślij"
+                  disabled={!!errorMessage}
+                >
                   <MdSend />
                 </button>
               </form>
