@@ -3,6 +3,7 @@ import Draggable from 'react-draggable'
 import './ChatInterface.css'
 import { MdSend, MdRefresh, MdExpandMore, MdExpandLess, MdMic, MdMicOff, MdKeyboardVoice, MdVoiceOverOff } from 'react-icons/md'
 import { ConvaiClient } from 'convai-web-sdk'
+import { AVATAR_IDS } from '../App'
 
 export default function ChatInterface({ characterId, setActiveScene }) {
   const [messages, setMessages] = useState([])
@@ -21,6 +22,8 @@ export default function ChatInterface({ characterId, setActiveScene }) {
   const [isMicPermissionGranted, setIsMicPermissionGranted] = useState(false)
   const [micError, setMicError] = useState('')
   const [userSpeechText, setUserSpeechText] = useState('')
+  const [autoGreetingDone, setAutoGreetingDone] = useState(false)
+  const [clientReady, setClientReady] = useState(false)
   
   // Dodajemy system kolejkowania audio
   const audioQueue = useRef([])
@@ -214,6 +217,17 @@ export default function ChatInterface({ characterId, setActiveScene }) {
       })
 
       convaiClient.current = client
+      
+      // Resetujemy stan czatu przy zmianie awatara
+      setMessages([])
+      npcTextStream.current = ""
+      userTextStream.current = ""
+      
+      // Resetujemy stan automatycznego przywitania
+      setAutoGreetingDone(false)
+      
+      // Oznaczamy, że klient jest gotowy
+      setClientReady(true)
 
       return () => {
         if (audioCollectionTimeout.current) {
@@ -224,6 +238,7 @@ export default function ChatInterface({ characterId, setActiveScene }) {
     } catch (error) {
       console.error('Convai initialization error:', error)
       setIsTyping(false) // Reset typing indicator on error
+      setClientReady(false)
     }
   }
 
@@ -424,6 +439,30 @@ export default function ChatInterface({ characterId, setActiveScene }) {
       setIsMicPermissionGranted(false)
     }
   }
+
+  // Automatyczne przywitanie po załadowaniu awatara
+  useEffect(() => {
+    const sendGreeting = async () => {
+      if (convaiClient.current && !autoGreetingDone && characterId === AVATAR_IDS[1] && clientReady) {
+        setIsTyping(true)
+        try {
+          // Wysyłamy ukrytą wiadomość, która spowoduje przywitanie awatara
+          await convaiClient.current.sendTextChunk("Przywitaj się i przedstaw się kim jesteś")
+          setAutoGreetingDone(true)
+        } catch (error) {
+          console.error('Error sending greeting:', error)
+          setIsTyping(false)
+        }
+      }
+    }
+
+    // Opóźniamy przywitanie o 2 sekundy, aby dać czas na załadowanie awatara
+    const timer = setTimeout(() => {
+      sendGreeting()
+    }, 2000)
+
+    return () => clearTimeout(timer)
+  }, [autoGreetingDone, characterId, clientReady])
 
   return (
     <Draggable 

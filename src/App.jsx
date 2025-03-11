@@ -26,7 +26,7 @@ import PlantOne from './components/plants/PlantOne'
 import RollUpDisplay from './components/RollUpDisplay'
 
 
-const AVATAR_IDS = {
+export const AVATAR_IDS = {
   1: 'fe2da934-6aa4-11ef-8fba-42010a7be011',
   2: '881e4aac-50d5-11ef-9461-42010a7be011',
   3: '9ff38f44-437d-11ef-9187-42010a7be011',
