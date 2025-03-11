@@ -21,6 +21,51 @@ export default function ChatInterface({ characterId, setActiveScene }) {
   const [isMicPermissionGranted, setIsMicPermissionGranted] = useState(false)
   const [micError, setMicError] = useState('')
   const [userSpeechText, setUserSpeechText] = useState('')
+  
+  // Dodajemy system kolejkowania audio
+  const audioQueue = useRef([])
+  const isPlayingAudio = useRef(false)
+  const audioCollectionTimeout = useRef(null)
+  const pendingAudioSegments = useRef([])
+
+  // Funkcja do odtwarzania kolejnego audio z kolejki
+  const playNextAudio = () => {
+    console.log('Próba odtworzenia kolejnego audio, kolejka:', audioQueue.current.length)
+    
+    if (audioQueue.current.length === 0) {
+      isPlayingAudio.current = false
+      console.log('Kolejka audio pusta, zatrzymuję odtwarzanie')
+      return
+    }
+    
+    isPlayingAudio.current = true
+    const nextAudio = audioQueue.current.shift()
+    
+    try {
+      console.log('Odtwarzam audio z kolejki')
+      if (convaiClient.current && typeof convaiClient.current.playAudio === 'function') {
+        convaiClient.current.playAudio(nextAudio)
+      } else {
+        console.error('Metoda playAudio niedostępna w kliencie Convai')
+        playNextAudio()
+      }
+    } catch (error) {
+      console.error('Błąd odtwarzania audio:', error)
+      playNextAudio()
+    }
+  }
+
+  const processAudioSegments = () => {
+    if (pendingAudioSegments.current.length > 0) {
+      console.log('Przetwarzanie zebranych segmentów audio:', pendingAudioSegments.current.length)
+      audioQueue.current.push(...pendingAudioSegments.current)
+      pendingAudioSegments.current = []
+      
+      if (!isPlayingAudio.current) {
+        playNextAudio()
+      }
+    }
+  }
 
   // Clear chat when character changes
   useEffect(() => {
@@ -29,6 +74,10 @@ export default function ChatInterface({ characterId, setActiveScene }) {
     setIsTyping(false)
     userTextStream.current = ""
     npcTextStream.current = ""
+    
+    // Czyszczenie kolejki audio
+    audioQueue.current = []
+    isPlayingAudio.current = false
     
     // Cleanup old client
     if (convaiClient.current) {
@@ -57,7 +106,11 @@ export default function ChatInterface({ characterId, setActiveScene }) {
 
       // Error callback
       client.setErrorCallback((type, statusMessage) => {
-        console.error("Convai Error:", type, statusMessage)
+        console.error("Convai Error:", {
+          type,
+          statusMessage,
+          timestamp: new Date().toISOString()
+        })
         setIsTyping(false) // Reset typing indicator on error
       })
 
@@ -68,6 +121,7 @@ export default function ChatInterface({ characterId, setActiveScene }) {
           const transcript = response.getUserQuery()
           if (transcript) {
             userTextStream.current += " " + transcript.getTextData()
+            console.log('User Query:', transcript.getTextData())
             
             if (transcript.getIsFinal()) {
               setMessages(prev => [...prev, {
@@ -83,6 +137,24 @@ export default function ChatInterface({ characterId, setActiveScene }) {
         if (response.hasAudioResponse()) {
           const audioResponse = response.getAudioResponse()
           npcTextStream.current += " " + audioResponse.getTextData()
+          console.log('Bot Response:', audioResponse.getTextData())
+          console.log('Full Response Object:', audioResponse)
+
+          // Zbieramy segmenty audio
+          if (audioResponse.array && audioResponse.array[0]) {
+            console.log('Dodaję segment audio do kolekcji')
+            pendingAudioSegments.current.push(audioResponse.array[0])
+            
+            // Resetujemy timer za każdym razem gdy otrzymamy nowy segment
+            if (audioCollectionTimeout.current) {
+              clearTimeout(audioCollectionTimeout.current)
+            }
+            
+            // Ustawiamy timer na przetworzenie zebranych segmentów
+            audioCollectionTimeout.current = setTimeout(() => {
+              processAudioSegments()
+            }, 500) // Czekamy 500ms na kolejne segmenty
+          }
 
           // Handle viseme data
           if (audioResponse.hasVisemesData()) {
@@ -103,6 +175,7 @@ export default function ChatInterface({ characterId, setActiveScene }) {
                 text: npcTextStream.current.trim(),
                 sender: 'bot'
               }
+              console.log('Updated Bot Message:', npcTextStream.current.trim())
               return updatedMessages
             }
             return [...prev, {
@@ -111,7 +184,6 @@ export default function ChatInterface({ characterId, setActiveScene }) {
             }]
           })
           
-          // Reset typing indicator when we get a response
           setIsTyping(false)
         }
       })
@@ -123,18 +195,30 @@ export default function ChatInterface({ characterId, setActiveScene }) {
 
       client.onAudioStop(() => {
         window.dispatchEvent(new Event('avatar-talking-end'))
-        npcTextStream.current = ""
-        // Reset viseme data when audio stops
-        window.visemeData = []
-        window.visemeDataActive = false
-        window.dispatchEvent(new Event('viseme-data-update'))
-        setIsTyping(false) // Ensure typing indicator is removed
+        
+        // Po zakończeniu odtwarzania audio, odtwórz następne z kolejki
+        console.log('Audio zakończone, sprawdzam kolejkę')
+        setTimeout(() => {
+          playNextAudio()
+        }, 100) // Małe opóźnienie dla stabilności
+        
+        // Tylko gdy kolejka jest pusta, resetujemy tekst
+        if (audioQueue.current.length === 0) {
+          npcTextStream.current = ""
+          // Reset viseme data when audio stops
+          window.visemeData = []
+          window.visemeDataActive = false
+          window.dispatchEvent(new Event('viseme-data-update'))
+          setIsTyping(false) // Ensure typing indicator is removed
+        }
       })
 
       convaiClient.current = client
 
       return () => {
-        // Cleanup event listeners
+        if (audioCollectionTimeout.current) {
+          clearTimeout(audioCollectionTimeout.current)
+        }
       }
 
     } catch (error) {
@@ -175,6 +259,10 @@ export default function ChatInterface({ characterId, setActiveScene }) {
     setMessages([])
     setInputMessage('')
     setIsTyping(false)
+    
+    // Czyszczenie kolejki audio
+    audioQueue.current = []
+    isPlayingAudio.current = false
     
     if (convaiClient.current) {
       if (typeof convaiClient.current.destroy === 'function') {
@@ -232,7 +320,17 @@ export default function ChatInterface({ characterId, setActiveScene }) {
               if (text) {
                 npcTextStream.current += text + " "
               }
+              
+              // Dodajemy audio do kolejki zamiast natychmiastowego odtwarzania
               if (audioData) {
+                console.log('Dodaję audio do kolejki (refresh)')
+                audioQueue.current.push(audioData)
+                
+                // Jeśli nie odtwarzamy obecnie audio, rozpocznij odtwarzanie
+                if (!isPlayingAudio.current) {
+                  playNextAudio()
+                }
+                
                 // Handle viseme data
                 if (audioResponse.hasVisemesData()) {
                   const lipsyncData = audioResponse.getVisemesData().array[0]
@@ -272,7 +370,21 @@ export default function ChatInterface({ characterId, setActiveScene }) {
 
         convaiClient.current.onAudioStop(() => {
           window.dispatchEvent(new Event('avatar-talking-end'))
-          npcTextStream.current = ""
+          
+          // Po zakończeniu odtwarzania audio, odtwórz następne z kolejki
+          console.log('Audio zakończone, sprawdzam kolejkę (refresh)')
+          setTimeout(() => {
+            playNextAudio()
+          }, 100) // Małe opóźnienie dla stabilności
+          
+          // Tylko gdy kolejka jest pusta, resetujemy tekst
+          if (audioQueue.current.length === 0) {
+            npcTextStream.current = ""
+            // Reset viseme data when audio stops
+            window.visemeData = []
+            window.visemeDataActive = false
+            window.dispatchEvent(new Event('viseme-data-update'))
+          }
         })
       } catch (error) {
         console.error('Init error:', error)

@@ -22,6 +22,8 @@ import { Physics } from '@react-three/cannon'
 import Ceiling  from './components/Ceiling'
 import { useCylinder } from '@react-three/cannon'
 import Sign from './components/Sign'
+import PlantOne from './components/plants/PlantOne'
+import RollUpDisplay from './components/RollUpDisplay'
 
 
 const AVATAR_IDS = {
@@ -120,7 +122,7 @@ const Scene = ({
         camera.lookAt(0, 0, 0)
       }}
     >
-      {/* <OrbitControls /> */}
+      <OrbitControls />
       <Physics gravity={[0, -9.81, 0]}>
         <Leva hidden={true} />
         <Environment 
@@ -201,6 +203,11 @@ const Scene = ({
                 <>
                   <Tv />
                   <Zegar />
+                  <RollUpDisplay 
+                    position={[2.2, 0, 1.5]}
+                    rotation={[0, -Math.PI/3, 0]}
+                    scale={0.9}
+                  />
                 </>
               )}
               {activeScene === 2 && (
@@ -213,6 +220,7 @@ const Scene = ({
                 <>
                   <Vase />
                   <Zegar />
+                  <PlantOne />
                 </>
               )}
               {activeScene === 4 && (
