@@ -4,26 +4,26 @@ import { SkeletonUtils } from 'three-stdlib'
 import { useControls } from 'leva'
 import { useBox } from '@react-three/cannon'
 
-export default function RollUpDisplay(props) {
-  // Kontrolki Leva dla roll-up display
-  const { position, rotation, scale } = useControls('RollUpDisplay', {
+export default function ChairOffice(props) {
+  // Leva controls for the office chair
+  const { position, rotation, scale } = useControls('ChairOffice', {
     position: {
-      value: [-5, 0, 4],
+      value: [3, 0.07, -1],
       step: 0.1,
     },
     rotation: {
-      value: [0, -Math.PI/1.7, 0],
+      value: [0, -Math.PI/2.2, 0],
       step: 0.01,
     },
     scale: {
-      value: 5,
+      value: 0.3,
       min: 0.1,
-      max: 10,
+      max: 2,
       step: 0.1,
     }
   })
 
-  const { scene: gltfScene } = useGLTF('/models/roll-up_display.glb', {
+  const { scene: gltfScene } = useGLTF('/models/office_chair.glb', {
     draco: true,
     meshOptimizer: true
   })
@@ -32,9 +32,10 @@ export default function RollUpDisplay(props) {
 
   const [ref] = useBox(() => ({
     type: 'Static',
-    args: [1, 2, 0.1], // Płaska kolizja dla ekranu
-    position: [1.5, 1, 2.5],
-    material: { friction: 0.1 }
+    args: [0.6, 1.2, 0.6], // Collision dimensions for the office chair
+    position: position,
+    rotation: rotation,
+    material: { friction: 0.2 }
   }))
 
   return (
@@ -52,7 +53,7 @@ export default function RollUpDisplay(props) {
   )
 }
 
-useGLTF.preload('/models/roll-up_display.glb', {
+useGLTF.preload('/models/office_chair.glb', {
   draco: true,
   meshOptimizer: true
 }) 

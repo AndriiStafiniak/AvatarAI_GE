@@ -2,29 +2,27 @@ import React, { Suspense, useState, Component, useCallback, useEffect } from 're
 import { Canvas } from '@react-three/fiber'
 import { Environment, PresentationControls, OrbitControls } from '@react-three/drei'
 import { Leva, useControls } from 'leva'
-import { ConvaiAvatar } from './ConvaiAvatar'
-import { ConvaiAvatar2 } from './ConvaiAvatar'
-import { ConvaiAvatar3 } from './ConvaiAvatar'
-import { ConvaiAvatar4 } from './ConvaiAvatar'
-import  ChatInterface  from './components/ChatInterface'
+import { ConvaiAvatar, ConvaiAvatar2, ConvaiAvatar3, ConvaiAvatar4 } from './ConvaiAvatar'
+import ChatInterface from './components/ChatInterface'
 import Floor from './components/Floor'
 import Wall from './components/Wall'
-import Tv from './components/Tv'
-import Zegar from './components/Zegar'
-import ReceptionDesk from './components/ReceptionDesk'
-import Vase from './components/Vase'
+import Tv from './components/interiorElements/Tv'
+import Zegar from './components/interiorElements/Zegar'
+import ReceptionDesk from './components/interiorElements/ReceptionDesk'
+import Vase from './components/interiorElements/Vase'
 import './App.css'
-import  Chair  from './components/Chair'
-import CoffeeTable from './components/CoffeeTable'
+import Chair from './components/interiorElements/Chair'
+import CoffeeTable from './components/interiorElements/CoffeeTable'
 import LoadingSpinner from './components/LoadingSpinner'
+import ChairOffice from './components/interiorElements/ChairOffice'
 
 import { Physics } from '@react-three/cannon'
-import Ceiling  from './components/Ceiling'
+import Ceiling from './components/Ceiling'
 import { useCylinder } from '@react-three/cannon'
 import Sign from './components/Sign'
-import PlantOne from './components/plants/PlantOne'
-import RollUpDisplay from './components/RollUpDisplay'
-
+import PlantOne from './components/interiorElements/PlantOne'
+import RollUpDisplay from './components/interiorElements/RollUpDisplay'
+import OfficeCabinet from './components/interiorElements/OfficeCabinet'
 
 export const AVATAR_IDS = {
   1: 'fe2da934-6aa4-11ef-8fba-42010a7be011',
@@ -33,18 +31,18 @@ export const AVATAR_IDS = {
   4: '2734589a-ef8f-11ef-9966-42010a7be016'
 };
 
-// Usuń cały obiekt COLOR_PALETTES i zastąp go pustym
+// Removed COLOR_PALETTES object and replaced with empty
 const COLOR_PALETTES = {}
 
-// Dodaj stałą z nowymi etykietami
+// Added constant with new labels
 const LABELS = {
-  1: 'TRANSFORMACJA ENERGETYCZNA FIRM',
-  2: 'HUB ENERGETYCZNY I WODOROWY',
-  3: 'POPRAWA EFEKTYWNOŚCI OZE',
-  4: 'CZYSTE POWIETRZE'
+  1: 'ENERGY TRANSFORMATION OF COMPANIES',
+  2: 'ENERGY AND HYDROGEN HUB',
+  3: 'IMPROVEMENT OF RENEWABLE ENERGY EFFICIENCY',
+  4: 'CLEAN AIR'
 }
 
-// Optymalizacja ErrorBoundary z lepszą obsługą błędów
+// Optimization of ErrorBoundary with better error handling
 class Scene3DErrorBoundary extends Component {
   constructor(props) {
     super(props)
@@ -76,10 +74,10 @@ class Scene3DErrorBoundary extends Component {
   }
 }
 
-// Nowy komponent opakowujący awatar z fizyką
+// New component wrapping avatar with physics
 const AvatarWithPhysics = ({ children, onLoad, position, rotation }) => {
   const [ref] = useCylinder(() => ({
-    mass: 0, // Mass 0 = obiekt statyczny
+    mass: 0, // Mass 0 = static object
     position,
     rotation,
     args: [0.3, 0.3, 1.8, 16], // [radiusTop, radiusBottom, height, numSegments]
@@ -96,7 +94,7 @@ const AvatarWithPhysics = ({ children, onLoad, position, rotation }) => {
   )
 }
 
-// Modyfikacja komponentu Scene, aby używał kontekstu
+// Modification of Scene component to use context
 const Scene = ({ 
   activeScene,
   isAvatarLoaded, 
@@ -186,6 +184,7 @@ const Scene = ({
                         {React.cloneElement(avatar, {
                           visible: Number(id) === visibleAvatar
                         })}
+                        {Number(id) === 1 && <OfficeCabinet position={[2, 0, 0]} />}
                       </group>
                     )
                   })}
@@ -203,6 +202,7 @@ const Scene = ({
                 <>
                   <Tv />
                   <Zegar />
+                  <ChairOffice />
                   <RollUpDisplay 
                     position={[2.2, 0, 1.5]}
                     rotation={[0, -Math.PI/3, 0]}
@@ -262,7 +262,7 @@ const Scene = ({
   )
 }
 
-// Nowy komponent dla przycisków awatara
+// New component for avatar buttons
 function AvatarButtons({ selectedAvatar, isLoading, handleAvatarChange, setActiveScene }) {
   const handleAvatarClick = (num) => {
     handleAvatarChange(num)
@@ -287,7 +287,7 @@ function AvatarButtons({ selectedAvatar, isLoading, handleAvatarChange, setActiv
         pointerEvents: isLoading ? 'none' : 'auto'
       }}
     >
-      {isLoading && selectedAvatar === num ? 'Ładowanie...' : LABELS[num]}
+      {isLoading && selectedAvatar === num ? 'Loading...' : LABELS[num]}
     </button>
   ));
 }
@@ -317,12 +317,12 @@ const App = () => {
   const handleSceneChange = useCallback((sceneName) => {
     setForceUpdate(prev => prev + 1)
     
-    // Automatyczna zmiana awatara w zależności od sceny
+    // Automatic avatar change depending on the scene
     const avatarMapping = {
-      'TRANSFORMACJA ENERGETYCZNA': 1,
-      'HUB ENERGETYCZNY I WODOROWY': 2,
-      'POPRAWA EFEKTYWNOŚCI OZE': 3,
-      'CZYSTE POWIETRZE': 4
+      'ENERGY TRANSFORMATION': 1,
+      'ENERGY AND HYDROGEN HUB': 2,
+      'IMPROVEMENT OF RENEWABLE ENERGY EFFICIENCY': 3,
+      'CLEAN AIR': 4
     }
     
     const newAvatar = avatarMapping[sceneName] || 1
@@ -330,7 +330,7 @@ const App = () => {
     setVisibleAvatar(newAvatar)
   }, [])
 
-  // Funkcja do ładowania wszystkich awatarów
+  // Function to load all avatars
   useEffect(() => {
     const loadAvatars = async () => {
       try {
@@ -413,24 +413,24 @@ const App = () => {
   )
 }
 
-// Nowy komponent dla przycisków sceny
+// New component for scene buttons
 function SceneButtons({ setActiveScene }) {
   return (
     <div className="scene-buttons">
       <button onClick={() => setActiveScene(1)}>
-        Transformacja Energetyczna
+        Energy Transformation
       </button>
       <button onClick={() => setActiveScene(2)}>
-        Hub Energetyczny
+        Energy Hub
       </button>
       <button onClick={() => setActiveScene(3)}>
-        POPRAWA EFEKTYWNOŚCI OZE
+        IMPROVEMENT OF RENEWABLE ENERGY EFFICIENCY
       </button>
       <button onClick={() => {
         const randomText = "TEST " + Math.floor(Math.random() * 1000);
         setActiveScene(randomText);
       }}>
-        Test Losowego Tekstu
+        Test Random Text
       </button>
     </div>
   );
