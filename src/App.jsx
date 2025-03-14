@@ -3,9 +3,9 @@ import { Canvas } from '@react-three/fiber'
 import { Environment, PresentationControls, OrbitControls } from '@react-three/drei'
 import { Leva, useControls } from 'leva'
 import { ConvaiAvatar, ConvaiAvatar2, ConvaiAvatar3, ConvaiAvatar4 } from './ConvaiAvatar'
-import ChatInterface from './components/ChatInterface'
-import Floor from './components/Floor'
-import Wall from './components/Wall'
+import ChatInterface from './chat/ChatInterface'
+import Floor from './walls/Floor'
+import Wall from './walls/Wall'
 import Tv from './components/interiorElements/Tv'
 import Zegar from './components/interiorElements/Zegar'
 import ReceptionDesk from './components/interiorElements/ReceptionDesk'
@@ -13,13 +13,13 @@ import Vase from './components/interiorElements/Vase'
 import './App.css'
 import Chair from './components/interiorElements/Chair'
 import CoffeeTable from './components/interiorElements/CoffeeTable'
-import LoadingSpinner from './components/LoadingSpinner'
+import LoadingSpinner from './asset/LoadingSpinner'
 import ChairOffice from './components/interiorElements/ChairOffice'
 
 import { Physics } from '@react-three/cannon'
-import Ceiling from './components/Ceiling'
+import Ceiling from './walls/Ceiling'
 import { useCylinder } from '@react-three/cannon'
-import Sign from './components/Sign'
+import Sign from './components/interiorElements/Sign'
 import PlantOne from './components/interiorElements/PlantOne'
 import RollUpDisplay from './components/interiorElements/RollUpDisplay'
 import OfficeCabinet from './components/interiorElements/OfficeCabinet'
@@ -104,7 +104,8 @@ const Scene = ({
   isLoading,
   forceUpdate,
   avatars,
-  visibleAvatar
+  visibleAvatar,
+  onAvatarReady
 }) => {
   return (
     <Canvas 
@@ -182,7 +183,8 @@ const Scene = ({
                         visible={Number(id) === visibleAvatar}
                       >
                         {React.cloneElement(avatar, {
-                          visible: Number(id) === visibleAvatar
+                          visible: Number(id) === visibleAvatar,
+                          onReady: onAvatarReady
                         })}
                         {Number(id) === 1 && <OfficeCabinet position={[2, 0, 0]} />}
                       </group>
@@ -302,15 +304,19 @@ const App = () => {
   const [avatars, setAvatars] = useState({})
   const [isLoadingAvatars, setIsLoadingAvatars] = useState(true)
   const [visibleAvatar, setVisibleAvatar] = useState(1)
+  const [isAvatarReady, setIsAvatarReady] = useState(false)
 
   const handleAvatarChange = useCallback((avatarNumber) => {
     setIsAvatarLoaded(false)
+    setIsAvatarReady(false)
     setSelectedAvatar(avatarNumber)
     setVisibleAvatar(avatarNumber)
     setActiveScene(avatarNumber)
     
     if (avatars[avatarNumber]) {
-      setIsAvatarLoaded(true)
+      setTimeout(() => {
+        setIsAvatarLoaded(true)
+      }, 500)
     }
   }, [avatars])
 
@@ -355,6 +361,11 @@ const App = () => {
       setIsAvatarLoaded(true)
     }
   }
+
+  const handleAvatarReady = useCallback((isReady) => {
+    console.log('Avatar ready state:', isReady)
+    setIsAvatarReady(isReady)
+  }, [])
 
   return (
     <div className="app-container" style={{ 
@@ -403,9 +414,16 @@ const App = () => {
             forceUpdate={forceUpdate}
             avatars={avatars}
             visibleAvatar={visibleAvatar}
+            onAvatarReady={handleAvatarReady}
           />
         </Scene3DErrorBoundary>
-        {isAvatarLoaded && <ChatInterface characterId={AVATAR_IDS[selectedAvatar]} setActiveScene={setActiveScene} />}
+        {isAvatarLoaded && isAvatarReady && (
+          <ChatInterface 
+            characterId={AVATAR_IDS[selectedAvatar]} 
+            setActiveScene={setActiveScene} 
+            isAvatarReady={isAvatarReady}
+          />
+        )}
 
         <SceneButtons setActiveScene={setActiveScene} />
       </div>

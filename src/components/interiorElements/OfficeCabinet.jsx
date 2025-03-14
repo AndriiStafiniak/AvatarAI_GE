@@ -6,18 +6,18 @@ import { useBox } from '@react-three/cannon';
 import { MeshStandardMaterial } from 'three';
 
 export default function OfficeCabinet(props) {
-  // Kontrolki Leva dla szafki biurowej
+  // Leva controls for the office cabinet
   const { position, rotation, scale } = useControls('OfficeCabinet', {
     position: {
-      value: [2.4, 1.17, -0.5], // Domyślna pozycja
+      value: [2.4, 1.17, -0.5], // Default position
       step: 0.1,
     },
     rotation: {
-      value: [0, Math.PI, 0], // Domyślna rotacja
+      value: [0, Math.PI, 0], // Default rotation
       step: 0.01,
     },
     scale: {
-      value: 0.2, // Domyślna skala
+      value: 0.2, // Default scale
       min: 0,
       max: 2,
       step: 0.1,
@@ -31,17 +31,9 @@ export default function OfficeCabinet(props) {
 
   const clone = useMemo(() => SkeletonUtils.clone(gltfScene), [gltfScene]);
 
-//   useEffect(() => {
-//     clone.traverse((child) => {
-//       if (child.isMesh) {
-//         child.material = new MeshStandardMaterial({ color: '#5E5E5E' });
-//       }
-//     });
-//   }, [clone]);
-
   const [ref] = useBox(() => ({
     type: 'Static',
-    args: [1, 1, 1], // Wymiary kolizji dla szafki biurowej
+    args: [1, 1, 1], // Collision dimensions for the office cabinet
     position: position,
     rotation: rotation,
     material: { friction: 0.5 }
@@ -62,5 +54,4 @@ export default function OfficeCabinet(props) {
   );
 }
 
-useGLTF.preload('/models/file_cabinet.glb');
-
+useGLTF.preload('/models/file_cabinet.glb'); 

@@ -1,11 +1,11 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import Draggable from 'react-draggable'
 import './ChatInterface.css'
 import { MdSend, MdRefresh, MdExpandMore, MdExpandLess, MdMic, MdMicOff, MdKeyboardVoice, MdVoiceOverOff, MdSpeed } from 'react-icons/md'
 import { ConvaiClient } from 'convai-web-sdk'
 import { AVATAR_IDS } from '../App'
 
-export default function ChatInterface({ characterId, setActiveScene }) {
+export default function ChatInterface({ characterId, setActiveScene, isAvatarReady }) {
   const [messages, setMessages] = useState([])
   const [inputMessage, setInputMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -33,6 +33,10 @@ export default function ChatInterface({ characterId, setActiveScene }) {
   const audioCollectionTimeout = useRef(null)
   const pendingAudioSegments = useRef([])
   const responseStartTime = useRef(null)
+
+  const [isLoading, setIsLoading] = useState(false)
+  const initTimeoutRef = useRef(null)
+  const connectionTimeoutRef = useRef(null)
 
   // Funkcja pomocnicza do wyświetlania przyjaznych komunikatów błędów
   const handleError = (error, context) => {
@@ -100,19 +104,14 @@ export default function ChatInterface({ characterId, setActiveScene }) {
     }
   }
 
-  // Clear chat when character changes
-  useEffect(() => {
-    setMessages([])
-    setInputMessage('')
-    setIsTyping(false)
-    userTextStream.current = ""
-    npcTextStream.current = ""
-    
-    // Czyszczenie kolejki audio
-    audioQueue.current = []
-    isPlayingAudio.current = false
-    
-    // Cleanup old client
+  // Cleanup function
+  const cleanup = useCallback(() => {
+    if (initTimeoutRef.current) {
+      clearTimeout(initTimeoutRef.current)
+    }
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current)
+    }
     if (convaiClient.current) {
       if (typeof convaiClient.current.destroy === 'function') {
         convaiClient.current.destroy()
@@ -121,14 +120,41 @@ export default function ChatInterface({ characterId, setActiveScene }) {
       }
       convaiClient.current = null
     }
+    setMessages([])
+    setInputMessage('')
+    setIsTyping(false)
+    setAutoGreetingDone(false)
+    setClientReady(false)
+    userTextStream.current = ""
+    npcTextStream.current = ""
+    audioQueue.current = []
+    isPlayingAudio.current = false
+    if (audioCollectionTimeout.current) {
+      clearTimeout(audioCollectionTimeout.current)
+    }
+  }, [])
 
-    // Initialize new client for the new character
-    initClient()
-  }, [characterId])
+  // Effect for character changes
+  useEffect(() => {
+    cleanup()
+    
+    if (characterId && isAvatarReady) {
+      console.log('Initializing client for character:', characterId)
+      initTimeoutRef.current = setTimeout(() => {
+        initClient()
+      }, 1000) // Zwiększamy opóźnienie inicjalizacji
+    }
+
+    return cleanup
+  }, [characterId, isAvatarReady, cleanup])
 
   // Initialize Convai client
   const initClient = async () => {
+    if (!characterId || !isAvatarReady) return
+
+    setIsLoading(true)
     try {
+      console.log('Creating new ConvaiClient instance')
       const client = new ConvaiClient({
         apiKey: '2d12bd421e3af7ce47223bce45944908',
         characterId: characterId,
@@ -137,18 +163,27 @@ export default function ChatInterface({ characterId, setActiveScene }) {
         enableFacialData: true,
       })
 
-      client.setErrorCallback((type, statusMessage) => {
-        const errorContext = {
-          type,
-          statusMessage,
-          timestamp: new Date().toISOString()
+      // Connection timeout
+      connectionTimeoutRef.current = setTimeout(() => {
+        if (!clientReady) {
+          handleError(new Error('Timeout podczas łączenia z awatarem'), 'Connection Timeout')
+          cleanup()
         }
-        handleError(new Error(statusMessage), 'Convai Client')
-        setIsTyping(false)
-      })
+      }, 15000) // Zwiększamy timeout do 15 sekund
 
       // Response callback
       client.setResponseCallback((response) => {
+        // Clear timeout on first response
+        if (connectionTimeoutRef.current) {
+          clearTimeout(connectionTimeoutRef.current)
+          connectionTimeoutRef.current = null
+        }
+        
+        if (!clientReady) {
+          console.log('Client connected successfully')
+          setClientReady(true)
+        }
+        
         // Handle user query
         if (response.hasUserQuery()) {
           const transcript = response.getUserQuery()
@@ -254,14 +289,13 @@ export default function ChatInterface({ characterId, setActiveScene }) {
       
       // Resetujemy stan automatycznego przywitania
       setAutoGreetingDone(false)
-      
-      // Oznaczamy, że klient jest gotowy
-      setClientReady(true)
 
+      setIsLoading(false)
     } catch (error) {
+      console.error('Error initializing client:', error)
+      setIsLoading(false)
       handleError(error, 'Client Initialization')
-      setIsTyping(false)
-      setClientReady(false)
+      cleanup()
     }
   }
 
@@ -372,12 +406,13 @@ export default function ChatInterface({ characterId, setActiveScene }) {
 
   // Automatyczne przywitanie po załadowaniu awatara
   useEffect(() => {
+    if (!clientReady || !characterId) return
+
     const sendGreeting = async () => {
-      if (convaiClient.current && !autoGreetingDone && characterId === AVATAR_IDS[1] && clientReady) {
+      if (convaiClient.current && !autoGreetingDone) {
         setIsTyping(true)
         try {
-          // Wysyłamy ukrytą wiadomość, która spowoduje przywitanie awatara
-          await convaiClient.current.sendTextChunk("Przywitaj się i przedstaw się kim jesteś")
+          await convaiClient.current.sendTextChunk("Przywitaj się krótko i zapytaj w czym możesz pomóc")
           setAutoGreetingDone(true)
         } catch (error) {
           handleError(error, 'Automatic Greeting')
@@ -386,13 +421,9 @@ export default function ChatInterface({ characterId, setActiveScene }) {
       }
     }
 
-    // Opóźniamy przywitanie o 1 sekundę, aby dać czas na załadowanie awatara
-    const timer = setTimeout(() => {
-      sendGreeting()
-    }, 1000) // Zmniejszamy opóźnienie
-
-    return () => clearTimeout(timer)
-  }, [autoGreetingDone, characterId, clientReady])
+    const greetingTimer = setTimeout(sendGreeting, 1000)
+    return () => clearTimeout(greetingTimer)
+  }, [clientReady, characterId, autoGreetingDone])
 
   // Funkcja przełączająca tryb szybkiej odpowiedzi
   const toggleFastResponseMode = () => {
@@ -508,6 +539,11 @@ export default function ChatInterface({ characterId, setActiveScene }) {
                 </button>
               </form>
             </div>
+            {isLoading && (
+              <div className="chat-loading">
+                Łączenie z awatarem...
+              </div>
+            )}
           </>
         )}
       </div>

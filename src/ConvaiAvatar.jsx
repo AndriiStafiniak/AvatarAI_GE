@@ -60,7 +60,7 @@ const LoadingSpinner = () => {
   );
 };
 
-function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
+function AvatarModel({ modelUrl, onLoad, visible, avatarType, onReady, ...props }) {
   const { scene } = useGLTF(modelUrl)
   
   // Dodajemy kontrolki Leva
@@ -316,6 +316,22 @@ function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
     }
   }, [avatarType, visible]);
 
+  useEffect(() => {
+    if (onReady && typeof onReady === 'function') {
+      onReady(false)
+      
+      // Czekamy na załadowanie modelu i sceny
+      const timer = setTimeout(() => {
+        if (clone && !isSceneLoading && visible) {
+          console.log('Avatar model ready:', avatarType)
+          onReady(true)
+        }
+      }, 2000) // Dajemy więcej czasu na załadowanie
+      
+      return () => clearTimeout(timer)
+    }
+  }, [clone, isSceneLoading, visible, avatarType, onReady])
+
   if (isSceneLoading) {
     return (
       <group visible={visible}>
@@ -337,7 +353,7 @@ function AvatarModel({ modelUrl, onLoad, visible, avatarType, ...props }) {
   )
 }
 
-export function ConvaiAvatar({ onLoad, visible, ...props }) {
+export function ConvaiAvatar({ onLoad, visible, onReady, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [error, setError] = useState(null)
   const [shouldLoad, setShouldLoad] = useState(false)
@@ -406,13 +422,14 @@ export function ConvaiAvatar({ onLoad, visible, ...props }) {
         onLoad={onLoad}
         visible={visible}
         avatarType={avatarType}
+        onReady={onReady}
         {...props} 
       />
     </Suspense>
   )
 }
 
-export function ConvaiAvatar2({ onLoad, visible = false, ...props }) {
+export function ConvaiAvatar2({ onLoad, visible = false, onReady, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [error, setError] = useState(null)
   const [shouldLoad, setShouldLoad] = useState(false)
@@ -481,13 +498,14 @@ export function ConvaiAvatar2({ onLoad, visible = false, ...props }) {
         onLoad={onLoad}
         visible={visible}
         avatarType={avatarType}
+        onReady={onReady}
         {...props} 
       />
     </Suspense>
   )
 }
 
-export function ConvaiAvatar3({ onLoad, visible = false, ...props }) {
+export function ConvaiAvatar3({ onLoad, visible = false, onReady, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [error, setError] = useState(null)
   const [shouldLoad, setShouldLoad] = useState(false)
@@ -556,13 +574,14 @@ export function ConvaiAvatar3({ onLoad, visible = false, ...props }) {
         onLoad={onLoad}
         visible={visible}
         avatarType={avatarType}
+        onReady={onReady}
         {...props} 
       />
     </Suspense>
   )
 }
 
-export function ConvaiAvatar4({ onLoad, visible = false, ...props }) {
+export function ConvaiAvatar4({ onLoad, visible = false, onReady, ...props }) {
   const [modelUrl, setModelUrl] = useState(null)
   const [error, setError] = useState(null)
   const [shouldLoad, setShouldLoad] = useState(false)
@@ -631,6 +650,7 @@ export function ConvaiAvatar4({ onLoad, visible = false, ...props }) {
         onLoad={onLoad}
         visible={visible}
         avatarType={avatarType}
+        onReady={onReady}
         {...props} 
       />
     </Suspense>
