@@ -24,6 +24,37 @@ import PlantOne from './components/interiorElements/PlantOne'
 import RollUpDisplay from './components/interiorElements/RollUpDisplay'
 import OfficeCabinet from './components/interiorElements/OfficeCabinet'
 
+// New MobileNotification component
+const MobileNotification = () => {
+  return (
+    <div className="mobile-notification" style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.9)',
+      zIndex: 9999,
+      color: 'white',
+      textAlign: 'center'
+    }}>
+      <div className="notification-content" style={{
+        padding: '30px',
+        backgroundColor: 'rgba(33, 150, 243, 0.8)',
+        borderRadius: '10px',
+        maxWidth: '80%'
+      }}>
+        <h2 style={{ marginBottom: '15px', fontSize: '24px' }}>Trwają prace nad wersją mobilną</h2>
+        <p style={{ marginBottom: '10px', fontSize: '16px' }}>Aplikacja jest obecnie dostępna na laptopach oraz wszystkich większych ekranach.</p>
+        <p style={{ fontSize: '16px' }}>Zapraszamy do korzystania z wersji pełnoekranowej.</p>
+      </div>
+    </div>
+  )
+}
+
 export const AVATAR_IDS = {
   1: 'fe2da934-6aa4-11ef-8fba-42010a7be011',
   2: '881e4aac-50d5-11ef-9461-42010a7be011',
@@ -305,6 +336,22 @@ const App = () => {
   const [isLoadingAvatars, setIsLoadingAvatars] = useState(true)
   const [visibleAvatar, setVisibleAvatar] = useState(1)
   const [isAvatarReady, setIsAvatarReady] = useState(false)
+  const [isMobileView, setIsMobileView] = useState(false)
+
+  useEffect(() => {
+    const checkMobileView = () => {
+      setIsMobileView(window.innerWidth < 1000)
+    }
+    
+    // Initial check
+    checkMobileView()
+    
+    // Add listener for window resize
+    window.addEventListener('resize', checkMobileView)
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkMobileView)
+  }, [])
 
   const handleAvatarChange = useCallback((avatarNumber) => {
     setIsAvatarLoaded(false)
@@ -375,6 +422,7 @@ const App = () => {
       top: 0,
       left: 0 
     }}>
+      {isMobileView && <MobileNotification />}
       <div className="scene-container">
         <div style={{
           position: 'absolute',
