@@ -6,17 +6,19 @@
     "@react-three/cannon": "^6.6.0",
     "@react-three/drei": "^9.80.1",
     "@react-three/fiber": "^8.13.6",
+    "g": "^2.0.1",
     "leva": "^0.9.35",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
-    "three": "^0.154.0"
+    "three": "^0.154.0",
+    "vercel": "^41.4.1"
   },
+  "type": "module",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev": "vite",
+    "build": "vite build",
+    "deploy": "npx vercel --prod"
   },
   "eslintConfig": {
     "extends": [
@@ -35,5 +37,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "vite": "^6.2.4"
   }
 }
