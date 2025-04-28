@@ -16,6 +16,7 @@ export default function ChatInterface({
   characterId,
   setActiveScene,
   isAvatarReady,
+  language,
 }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -29,6 +30,8 @@ export default function ChatInterface({
   const [clientReady, setClientReady] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentCharacterId, setCurrentCharacterId] = useState(null);
+  const [voiceId, setVoiceId] = useState(null);
+  const [availableVoices, setAvailableVoices] = useState([]);
 
   // Refs
   const messagesEndRef = useRef(null);
@@ -152,15 +155,39 @@ export default function ChatInterface({
     setIsLoading(true);
     console.log(`Inicjalizacja klienta Convai dla postaci: ${characterId}`);
 
-    // Sprawdzamy czy nie próbujemy zainicjować zbyt wiele razy
-    initAttempts.current += 1;
-    if (initAttempts.current > 3) {
-      console.error("Zbyt wiele prób inicjalizacji, przerywam");
-      setIsLoading(false);
-      return null;
-    }
-
     try {
+      // Najpierw pobierz dostępne głosy
+      console.log("Pobieranie dostępnych głosów...");
+      const response = await fetch("https://api.convai.com/character/get", {
+        method: "POST",
+        headers: {
+          "CONVAI-API-KEY": "2d12bd421e3af7ce47223bce45944908",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ charID: characterId }),
+      });
+
+      if (!response.ok) throw new Error("Failed to fetch character data");
+
+      const data = await response.json();
+      const voices = data?.voice_details || [];
+      console.log("Dostępne głosy:", voices);
+      setAvailableVoices(voices);
+
+      // Wybierz odpowiedni głos na podstawie języka
+      const selectedVoice =
+        voices.find((voice) =>
+          language === "pl" ? voice.language === "pl" : voice.language === "en"
+        ) || voices[0];
+
+      console.log("Wybrany głos:", selectedVoice);
+      console.log("Aktualny język:", language);
+
+      if (selectedVoice) {
+        setVoiceId(selectedVoice.voiceId);
+        console.log("Ustawiono ID głosu:", selectedVoice.voiceId);
+      }
+
       // Najpierw upewnij się, że stary klient jest zamknięty
       if (convaiClient.current) {
         try {
@@ -181,6 +208,8 @@ export default function ChatInterface({
         enableAudio: true,
         faceModal: 3,
         enableFacialData: true,
+        language: language,
+        voiceId: selectedVoice?.voiceId,
       });
 
       // Ustawienie timeoutu połączenia
@@ -311,10 +340,12 @@ export default function ChatInterface({
       setTimeout(() => {
         if (client && clientReady && convaiClient.current === client) {
           try {
+            const greetingMessage =
+              language === "pl"
+                ? "Przywitaj się krótko i zapytaj w czym możesz pomóc"
+                : "Greet briefly and ask how you can help";
             client
-              .sendTextChunk(
-                "Przywitaj się krótko i zapytaj w czym możesz pomóc"
-              )
+              .sendTextChunk(greetingMessage)
               .catch((err) => console.error("Błąd przywitania:", err));
           } catch (error) {
             console.error("Błąd podczas wysyłania przywitania:", error);
@@ -331,6 +362,32 @@ export default function ChatInterface({
       return null;
     }
   };
+
+  // Efekt do reinicjalizacji klienta przy zmianie języka
+  useEffect(() => {
+    if (convaiClient.current) {
+      console.log("Zmiana języka na:", language);
+      console.log("Dostępne głosy:", availableVoices);
+
+      // Znajdź odpowiedni głos dla nowego języka
+      const selectedVoice =
+        availableVoices.find((voice) =>
+          language === "pl" ? voice.language === "pl" : voice.language === "en"
+        ) || availableVoices[0];
+
+      console.log("Znaleziony głos dla języka:", selectedVoice);
+
+      if (selectedVoice && selectedVoice.voiceId !== voiceId) {
+        console.log("Zmiana głosu z", voiceId, "na", selectedVoice.voiceId);
+        setVoiceId(selectedVoice.voiceId);
+        handleRefresh();
+      } else {
+        console.log(
+          "Brak zmiany głosu - ten sam głos lub brak dostępnego głosu"
+        );
+      }
+    }
+  }, [language, availableVoices]);
 
   // Wysyłanie wiadomości tekstowej
   const sendTextMessage = async (e) => {
